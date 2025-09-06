@@ -11,7 +11,7 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import Response
 from prometheus_client import Counter, Gauge, Histogram, CONTENT_TYPE_LATEST, generate_latest
 
-from .ops import run_pipeline
+from ops import run_pipeline
 
 
 app = FastAPI(title="EdgeSight QA - Preprocess")

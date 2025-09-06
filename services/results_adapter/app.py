@@ -11,10 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 from prometheus_client import Counter, CONTENT_TYPE_LATEST, generate_latest
 
-from .sink_mqtt import publish_mqtt
-from .sink_opcua import write_defect_tag
-from .sink_webhook import send_webhook
-from .governance import GovernanceLogger
+from sink_mqtt import publish_mqtt
+from sink_opcua import write_defect_tag
+from sink_webhook import send_webhook
+from governance import GovernanceLogger
 
 
 app = FastAPI(title="EdgeSight QA - Results Adapter")
