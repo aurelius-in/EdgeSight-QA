@@ -9,6 +9,9 @@ export default function App() {
   const [opcuaEnabled, setOpcua] = useState<boolean>(false)
   const [latencyP95, setLatencyP95] = useState<number>(0)
   const [errorMsg, setErrorMsg] = useState<string>('')
+  const [resultsCount, setResultsCount] = useState<number>(0)
+  const [mqttCount, setMqttCount] = useState<number>(0)
+  const [adapterUp, setAdapterUp] = useState<boolean>(false)
   const evtSourceRef = useRef<EventSource | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [frameUrl, setFrameUrl] = useState<string>('')
@@ -35,11 +38,12 @@ export default function App() {
         .then(j => setLatencyP95(j?.latency_p95_ms ?? 0))
         .catch(() => {})
       fetch(`${apiBase}/config`).then(r=>r.json()).then(j=> setOpcua(!!j?.opcua_enabled)).catch(()=>{})
+      fetch(`${apiBase}/healthz`).then(r => setAdapterUp(r.ok)).catch(()=> setAdapterUp(false))
       fetch(`${apiBase}/metrics`).then(r=>r.text()).then(txt => {
         const m = /results_received_total\s+(\d+(?:\.\d+)?)/.exec(txt)
-        if (m) {
-          // Could display if needed
-        }
+        if (m) setResultsCount(parseFloat(m[1]))
+        const m2 = /mqtt_published_total\s+(\d+(?:\.\d+)?)/.exec(txt)
+        if (m2) setMqttCount(parseFloat(m2[1]))
       }).catch(()=>{})
     }, 1000)
     return () => clearInterval(id)
@@ -51,6 +55,8 @@ export default function App() {
       <div style={{ display: 'flex', gap: 16 }}>
         <button onClick={() => startDemo()}>Start Demo</button>
         <span>p95: {latencyP95.toFixed(1)} ms</span>
+        <span>Adapter: {adapterUp ? 'up' : 'down'}</span>
+        <span>Results: {resultsCount} | MQTT: {mqttCount}</span>
         <label>
           Threshold: {threshold.toFixed(2)}
           <input
