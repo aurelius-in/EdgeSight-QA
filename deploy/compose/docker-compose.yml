@@ -4,6 +4,8 @@ services:
     image: eclipse-mosquitto:2
     ports:
       - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
   capture:
     build: ../../services/capture
     environment:

@@ -73,10 +73,36 @@ def _capture_loop():
         frame_counter = 0
         window_start = time.time()
         frame_gen = None
+        def _synthetic_gen():
+            try:
+                import numpy as np
+            except Exception as e:
+                print(f"[capture] numpy import failed: {e}", flush=True)
+                while True:
+                    time.sleep(1)
+                    yield 0, time.monotonic_ns(), None
+            fid = 0
+            interval = 1.0 / max(0.1, cfg.fps_cap)
+            w, h = cfg.width, cfg.height
+            while True:
+                t0 = time.perf_counter()
+                img = np.zeros((h, w, 3), dtype=np.uint8)
+                x = (fid * 5) % max(1, w - 60)
+                y = (fid * 3) % max(1, h - 40)
+                cv2.rectangle(img, (x, y), (x + 60, y + 40), (0, 0, 255), -1)
+                ts = time.monotonic_ns()
+                yield fid, ts, img
+                fid += 1
+                dt = time.perf_counter() - t0
+                if dt < interval:
+                    time.sleep(interval - dt)
         while not _stop_flag.is_set():
             if frame_gen is None:
                 try:
-                    frame_gen = read_frames(cfg)
+                    if cfg.source == "synthetic":
+                        frame_gen = _synthetic_gen()
+                    else:
+                        frame_gen = read_frames(cfg)
                     print("[capture] frame generator (re)initialized", flush=True)
                 except Exception as e:
                     print(f"[capture] failed to init frame generator: {e}", flush=True)
