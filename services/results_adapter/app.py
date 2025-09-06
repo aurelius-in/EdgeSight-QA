@@ -37,8 +37,7 @@ gov = GovernanceLogger(base_dir=Path(os.getenv("GOVERNANCE_DIR", "/app/data/gove
 
 subscribers = []
 import asyncio
-from PIL import Image
-import io
+# removed unused imports
 
 OPCUA_ENABLED = os.getenv("OPCUA_ENABLED", "false").lower() in ("1", "true", "yes")
 
@@ -72,8 +71,12 @@ async def result(request: Request):
         if publish_mqtt(topic, json.dumps(payload).encode()):
             mqtt_published.inc()
         if OPCUA_ENABLED:
-            if write_defect_tag(line_id, payload):
-                opcua_published.inc()
+            try:
+                ok = await write_defect_tag(line_id, payload)
+                if ok:
+                    opcua_published.inc()
+            except Exception:
+                pass
         if send_webhook(os.getenv("WEBHOOK_URL", ""), payload):
             webhook_sent.inc()
 

@@ -51,8 +51,11 @@ def metrics():
 @app.post("/infer")
 def infer(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), tensor: UploadFile = File(...), shape: UploadFile = File(...), dtype: UploadFile = File(...)) -> Dict[str, Any]:
     tensor_bytes = tensor.file.read()
-    shape_list = eval(shape.file.read().decode())
-    dtype_str = dtype.file.read().decode()
+    shape_str = shape.file.read().decode().strip()
+    # safe parse for shape like "[3, 360, 640]" or "(3,360,640)"
+    clean = shape_str.strip().lstrip('([').rstrip(')]')
+    shape_list = [int(x.strip()) for x in clean.split(',') if x.strip()]
+    dtype_str = dtype.file.read().decode().strip()
     arr = np.frombuffer(tensor_bytes, dtype=np.dtype(dtype_str)).reshape(shape_list)
     t0 = time.perf_counter()
     detections = engine.run(arr)
