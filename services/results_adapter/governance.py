@@ -58,6 +58,7 @@ class GovernanceLogger:
         totals = 0
         invalid = 0
         detections = 0
+        latencies = []
         for day_dir in sorted(self.base_dir.glob("*")):
             try:
                 d = datetime.strptime(day_dir.name, "%Y-%m-%d").date()
@@ -75,7 +76,15 @@ class GovernanceLogger:
                 totals += 1
                 if not self.verify_record(wrapped):
                     invalid += 1
-                detections += len(wrapped.get("record", {}).get("detections", []))
-        return {"total": totals, "invalid": invalid, "detections": detections}
+                rec = wrapped.get("record", {})
+                detections += len(rec.get("detections", []))
+                if "latency_ms" in rec and isinstance(rec["latency_ms"], (int, float)):
+                    latencies.append(float(rec["latency_ms"]))
+        p95 = 0.0
+        if latencies:
+            latencies.sort()
+            idx = int(0.95 * (len(latencies) - 1))
+            p95 = latencies[idx]
+        return {"total": totals, "invalid": invalid, "detections": detections, "latency_p95_ms": p95}
 
 
