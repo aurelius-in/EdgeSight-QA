@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [develop]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install Python deps (services)
+        run: |
+          pip install -U pip
+          pip install pytest
+          pip install -r services/capture/requirements.txt || true
+          pip install -r services/preprocess/requirements.txt
+          pip install -r services/inference/requirements.txt
+          pip install -r services/results_adapter/requirements.txt
+          pip install -r services/governance_exporter/requirements.txt
+      - name: Run pytest
+        run: pytest -q
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Build UI
+        working-directory: ui/operator
+        run: |
+          npm ci || npm install
+          npm run build
+      - name: Lint Helm
+        run: |
+          sudo snap install helm --classic || true
+          helm lint deploy/helm/edgesight-qa || true
+
+

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: preprocess
+  namespace: edgesight
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: preprocess }
+  template:
+    metadata:
+      labels: { app: preprocess }
+    spec:
+      containers:
+        - name: preprocess
+          image: ghcr.io/your-org/edgesight-preprocess:latest
+          ports:
+            - containerPort: 9002
+          env:
+            - name: INFERENCE_URL
+              value: http://inference:9003/infer
+          livenessProbe:
+            httpGet: { path: /healthz, port: 9002 }
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet: { path: /readyz, port: 9002 }
+            initialDelaySeconds: 5
+
+

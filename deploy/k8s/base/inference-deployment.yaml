@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference
+  namespace: edgesight
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: inference }
+  template:
+    metadata:
+      labels: { app: inference }
+    spec:
+      containers:
+        - name: inference
+          image: ghcr.io/your-org/edgesight-inference:latest
+          ports:
+            - containerPort: 9003
+          env:
+            - name: MODEL_PATH
+              value: /app/assets/yolov8n.onnx
+          livenessProbe:
+            httpGet: { path: /healthz, port: 9003 }
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet: { path: /readyz, port: 9003 }
+            initialDelaySeconds: 5
+
+

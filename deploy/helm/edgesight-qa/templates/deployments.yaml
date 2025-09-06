@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capture
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: capture } }
+  template:
+    metadata: { labels: { app: capture } }
+    spec:
+      containers:
+        - name: capture
+          image: {{ .Values.image.repository }}/edgesight-capture:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{ containerPort: 9001 }]
+          env:
+            - name: PREPROCESS_URL
+              value: http://preprocess:9002/frame
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: preprocess
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: preprocess } }
+  template:
+    metadata: { labels: { app: preprocess } }
+    spec:
+      containers:
+        - name: preprocess
+          image: {{ .Values.image.repository }}/edgesight-preprocess:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{ containerPort: 9002 }]
+          env:
+            - name: INFERENCE_URL
+              value: http://inference:9003/infer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: inference } }
+  template:
+    metadata: { labels: { app: inference } }
+    spec:
+      containers:
+        - name: inference
+          image: {{ .Values.image.repository }}/edgesight-inference:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{ containerPort: 9003 }]
+          env:
+            - name: MODEL_PATH
+              value: /app/assets/yolov8n.onnx
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: results-adapter
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: results-adapter } }
+  template:
+    metadata: { labels: { app: results-adapter } }
+    spec:
+      containers:
+        - name: results-adapter
+          image: {{ .Values.image.repository }}/edgesight-adapter:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{ containerPort: 9004 }]
+          env:
+            - name: MQTT_BROKER
+              value: {{ .Values.env.MQTT_BROKER | quote }}
+            - name: MQTT_PORT
+              value: {{ .Values.env.MQTT_PORT | quote }}
+
+
