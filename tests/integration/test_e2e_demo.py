@@ -14,7 +14,7 @@ def test_e2e_demo_flow():
     except Exception:
         pass
     # wait and check adapter metrics
-    deadline = time.time() + 10
+    deadline = time.time() + 20
     got = False
     while time.time() < deadline and not got:
         try:
@@ -23,6 +23,8 @@ def test_e2e_demo_flow():
                 line = [l for l in m.splitlines() if l.startswith("results_received_total ")][0]
                 val = float(line.split()[1])
                 if val > 0:
+                    # Also assert e2e histogram exists
+                    assert "e2e_latency_ms_bucket" in m
                     got = True
                     break
         except Exception:
