@@ -54,6 +54,7 @@ export default function App() {
   }, [])
 
   return (
+    <>
     <div style={{ fontFamily: 'sans-serif', padding: 16 }}>
       <h2>EdgeSight QA - Operator</h2>
       <div style={{ display: 'flex', gap: 16 }}>
@@ -124,6 +125,7 @@ export default function App() {
         <button onClick={() => setErrorMsg('')} style={{ marginLeft: 8 }}>x</button>
       </div>
     )}
+    </>
   )
 }
 
