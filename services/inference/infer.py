@@ -16,7 +16,10 @@ class InferenceEngine:
         self.conf_threshold = self._load_threshold() or float(os.getenv("CONF_THRESHOLD", "0.5"))
 
     def run(self, tensor_chw: np.ndarray) -> List[Dict[str, Any]]:
-        # Demo stub: emit one fake detection when average intensity crosses threshold
+        # Demo stub: optionally force one detection
+        if os.getenv("DEMO_FORCE", "0") in ("1", "true", "yes"):
+            return [{"bbox": [10, 10, 50, 40], "score": 0.9, "class_id": 0}]
+        # Otherwise emit one fake detection when average intensity crosses threshold
         avg = float(np.clip(tensor_chw.mean(), 0.0, 1.0))
         conf = max(0.0, min(1.0, avg))
         if conf >= self.conf_threshold:
