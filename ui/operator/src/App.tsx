@@ -8,6 +8,7 @@ export default function App() {
   const [threshold, setThreshold] = useState<number>(0.5)
   const evtSourceRef = useRef<EventSource | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [frameUrl, setFrameUrl] = useState<string>('')
 
   useEffect(() => {
     const url = `${apiBase}/events`
@@ -20,6 +21,13 @@ export default function App() {
     }
     evtSourceRef.current = es
     return () => es.close()
+  }, [])
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setFrameUrl(`/last_frame?nocache=${Date.now()}`)
+    }, 1000)
+    return () => clearInterval(id)
   }, [])
 
   return (
@@ -44,7 +52,10 @@ export default function App() {
         </label>
       </div>
       <h3>Recent Events</h3>
-      <canvas ref={canvasRef} width={640} height={360} style={{ border: '1px solid #ccc' }} />
+      <div style={{ position: 'relative', width: 640, height: 360 }}>
+        <img src={frameUrl} alt="last frame" width={640} height={360} style={{ position: 'absolute', top: 0, left: 0 }} />
+        <canvas ref={canvasRef} width={640} height={360} style={{ position: 'absolute', top: 0, left: 0 }} />
+      </div>
       {events[0] && (
         <DrawBoxes canvasRef={canvasRef} detections={events[0].detections} />
       )}

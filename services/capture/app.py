@@ -67,6 +67,13 @@ def _capture_loop():
                 continue
             _buffer.append((frame_id, ts_ns, jpg.tobytes()))
 
+            # send preview opportunistically
+            try:
+                preview_url = os.getenv("PREVIEW_URL", "http://results_adapter:9004/frame_preview")
+                requests.post(preview_url, data=_buffer[-1][2], timeout=0.2)
+            except Exception:
+                pass
+
             # attempt to flush buffer
             while _buffer and not _stop_flag.is_set():
                 fid, ts, payload = _buffer[0]

@@ -37,6 +37,8 @@ gov = GovernanceLogger(base_dir=Path(os.getenv("GOVERNANCE_DIR", "/app/data/gove
 
 subscribers = []
 import asyncio
+from PIL import Image
+import io
 
 
 @app.get("/healthz")
@@ -109,6 +111,24 @@ async def events():
             subscribers.remove(queue)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+_last_frame: bytes = b""
+
+
+@app.post("/frame_preview")
+async def frame_preview(request: Request):
+    global _last_frame
+    # Accept raw JPEG bytes
+    _last_frame = await request.body()
+    return {"status": "stored", "size": len(_last_frame)}
+
+
+@app.get("/last_frame")
+def last_frame():
+    if not _last_frame:
+        return Response(status_code=404)
+    return Response(content=_last_frame, media_type="image/jpeg")
 
 
 if __name__ == "__main__":
