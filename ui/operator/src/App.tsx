@@ -128,8 +128,11 @@ export default function App() {
             {ev.ts} - {ev.frame_id} - dets: {ev.detections?.length ?? 0} {ev.corr_id ? `(corr ${ev.corr_id})` : ''}
             {ev.trace_id && (
               <>
-                {' '}<a href={`http://localhost:3000/explore?schemaVersion=1&panes=%7B%22traces%22%3A%7B%22datasource%22%3A%22Tempo%22%2C%22queries%22%3A%5B%7B%22query%22%3A%22{traceId%3D%5C%22${ev.trace_id}%5C%22}%22%7D%5D%7D%7D&orgId=1`}
-                   target="_blank" rel="noreferrer">trace</a>
+                {' '}<a
+                  href={`http://localhost:3000/explore?schemaVersion=1&panes=%7B%22traces%22%3A%7B%22datasource%22%3A%22Tempo%22%2C%22queries%22%3A%5B%7B%22query%22%3A%22{traceId%3D%5C%22${ev.trace_id}%5C%22}%22%7D%5D%7D%7D&orgId=1`}
+                  target="_blank" rel="noreferrer"
+                  style={{ marginLeft: 8, padding: '2px 6px', border: '1px solid #ccc', borderRadius: 4 }}
+                >View trace</a>
               </>
             )}
             {ev.detections?.map((d: any, j: number) => (
