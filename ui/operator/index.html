@@ -29,6 +29,11 @@
           0 0 18px rgba(0, 216, 255, 0.35),
           0 0 28px rgba(255, 0, 168, 0.25);
       }
+      .logo-gradient {
+        background: linear-gradient(135deg, var(--accent-pink) 0%, var(--accent-cyan) 55%, var(--accent-teal) 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+        text-shadow: 0 0 14px rgba(255,0,168,0.25), 0 0 20px rgba(0,216,255,0.22);
+      }
       .panel { background: var(--panel); border: 1px solid var(--panel-border); box-shadow: inset 0 0 40px rgba(0,216,255,0.05); border-radius: 12px; }
       .glow { box-shadow: 0 0 16px rgba(0,216,255,0.28); }
       .scanline { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(1200px 800px at 20% 20%, rgba(255,0,168,0.08), transparent 70%), radial-gradient(1200px 800px at 80% 80%, rgba(0,216,255,0.06), transparent 70%), repeating-linear-gradient( to bottom, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 2px, transparent 4px ); mix-blend-mode: overlay; }

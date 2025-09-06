@@ -108,7 +108,10 @@ export default function App() {
   return (
     <>
     <div style={{ fontFamily: 'sans-serif', padding: 16 }}>
-      <h2 className="neon">EdgeSight QA - Operator</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+        <img src="/media/esqa/esqa-poster.png" alt="EdgeSight QA" width={56} height={56} style={{ borderRadius: 8 }} />
+        <h2 className="neon logo-gradient" style={{ margin: 0 }}>EDGESIGHT QA</h2>
+      </div>
       {!sseConnected && (
         <div style={{ background: '#fff3cd', color: '#7f6519', padding: 8, border: '1px solid #ffe69c', marginBottom: 12 }}>
           Live feed disconnected. Retrying...
