@@ -9,9 +9,14 @@ services:
     environment:
       - PREPROCESS_URL=http://preprocess:9002/frame
       - FRAME_RATE_CAP=5
+      - CAMERA_URL=file:/app/assets/sample.mp4
+      - FRAME_WIDTH=640
+      - FRAME_HEIGHT=360
     ports: ["9001:9001"]
     depends_on:
       - preprocess
+    volumes:
+      - ../../assets:/app/assets:ro
   preprocess:
     build: ../../services/preprocess
     environment:
@@ -26,6 +31,8 @@ services:
     environment:
       - MODEL_PATH=/app/assets/yolov8n.onnx
     ports: ["9003:9003"]
+    volumes:
+      - ../../assets:/app/assets:ro
   results_adapter:
     build: ../../services/results_adapter
     environment:
