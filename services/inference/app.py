@@ -81,7 +81,23 @@ def patch_config(cfg: Dict[str, Any] = Body(...)):
 
 @app.get("/config")
 def get_config():
-    return {"conf_threshold": engine.conf_threshold, "offline_force": engine.offline_force, "gpu_in_use": bool(engine.gpu_in_use)}
+    providers: list[str] = []
+    try:
+        providers = list(getattr(engine, "providers", []) or [])
+    except Exception:
+        providers = []
+    return {
+        "conf_threshold": engine.conf_threshold,
+        "offline_force": engine.offline_force,
+        "gpu_in_use": bool(engine.gpu_in_use),
+        "providers": providers,
+        "ready": bool(engine.ready),
+    }
+
+
+@app.get("/status")
+def status():
+    return get_config()
 
 
 if __name__ == "__main__":
