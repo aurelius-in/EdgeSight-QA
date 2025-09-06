@@ -1,0 +1,20 @@
+Edgesight QA installed in namespace: {{ .Release.Namespace }}
+
+1) Verify pods:
+   kubectl get pods -n {{ .Release.Namespace }}
+
+2) Port-forward services:
+   kubectl -n {{ .Release.Namespace }} port-forward svc/capture 9001 &
+   kubectl -n {{ .Release.Namespace }} port-forward svc/preprocess 9002 &
+   kubectl -n {{ .Release.Namespace }} port-forward svc/inference 9003 &
+   kubectl -n {{ .Release.Namespace }} port-forward svc/results-adapter 9004 &
+
+3) Health checks:
+   curl -s http://localhost:9001/healthz
+   curl -s http://localhost:9002/healthz
+   curl -s http://localhost:9003/healthz
+   curl -s http://localhost:9004/healthz
+
+4) Start demo and watch events:
+   curl -X POST http://localhost:9001/start
+   curl -N http://localhost:9004/events

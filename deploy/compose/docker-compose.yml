@@ -17,6 +17,11 @@ services:
       - preprocess
     volumes:
       - ../../assets:/app/assets:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:9001/readyz').getcode()==200 else sys.exit(1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   preprocess:
     build: ../../services/preprocess
     environment:
@@ -26,6 +31,11 @@ services:
     ports: ["9002:9002"]
     depends_on:
       - inference
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:9002/readyz').getcode()==200 else sys.exit(1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   inference:
     build: ../../services/inference
     environment:
@@ -34,6 +44,11 @@ services:
     ports: ["9003:9003"]
     volumes:
       - ../../assets:/app/assets:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:9003/readyz').getcode()==200 else sys.exit(1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   results_adapter:
     build: ../../services/results_adapter
     environment:
@@ -43,6 +58,11 @@ services:
     ports: ["9004:9004"]
     depends_on:
       - mosquitto
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:9004/readyz').getcode()==200 else sys.exit(1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   ui:
     build: ../../ui/operator
     ports: ["5173:80"]

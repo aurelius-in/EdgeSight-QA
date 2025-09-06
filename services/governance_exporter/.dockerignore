@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.vscode/
+.pytest_cache/
+.env
+assets/
