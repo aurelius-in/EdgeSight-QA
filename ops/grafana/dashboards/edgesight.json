@@ -45,6 +45,16 @@
       "fieldConfig": { "defaults": { "custom": { "exemplars": { "color": "rgba(255,0,0,0.7)", "line": true } } } },
       "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 }
     }
+    ,
+    {
+      "type": "nodeGraph",
+      "title": "Service Map",
+      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 10 },
+      "options": {
+        "datasource": "Tempo",
+        "tracesToMetrics": { "datasource": "Prometheus" }
+      }
+    }
   ],
   "schemaVersion": 36,
   "version": 1
