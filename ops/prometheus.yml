@@ -7,4 +7,7 @@ scrape_configs:
       - targets: ['capture:9001', 'preprocess:9002', 'inference:9003', 'results_adapter:9004']
     metrics_path: /metrics
 
+# Enable exemplars storage (Prometheus v2.27+)
+enable_feature: ["exemplar-storage"]
+
 
