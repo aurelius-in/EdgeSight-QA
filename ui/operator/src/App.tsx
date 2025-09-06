@@ -29,6 +29,16 @@ export default function App() {
   const [legend, setLegend] = useState<Record<string, string>>({})
   const [avgPreMs, setAvgPreMs] = useState<number>(0)
   const [avgInferMs, setAvgInferMs] = useState<number>(0)
+  const [showHero, setShowHero] = useState<boolean>(true)
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key.toLowerCase() === 'l') { setShowHero(false); startDemo() }
+      if (e.key.toLowerCase() === 'o') { setOffline(true); setDemoForce(true) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   useEffect(() => {
     const url = `${apiBase}/events`
@@ -131,6 +141,23 @@ export default function App() {
   return (
     <>
     <div style={{ fontFamily: 'sans-serif', padding: 16 }}>
+      {showHero && (
+        <div className="panel glow holo-grid" style={{ padding: 24, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <img src={(import.meta as any).env.BASE_URL + 'media/esqa/esqa-poster.png'} alt="EdgeSight QA" width={80} height={80} style={{ borderRadius: 12 }} />
+              <div>
+                <div className="neon logo-gradient" style={{ fontSize: 28, fontWeight: 800, letterSpacing: 1 }}>EDGESIGHT QA</div>
+                <div style={{ opacity: 0.85 }}>Real-time, on-device vision QA — online or offline.</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn btn-primary" onClick={() => { setShowHero(false); startDemo() }}>Enter Live</button>
+              <button className="btn btn-link" onClick={() => { setShowHero(false); setOffline(true); setDemoForce(true) }}>Enter Offline</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
         <img src={(import.meta as any).env.BASE_URL + 'media/esqa/esqa-poster.png'} alt="EdgeSight QA" width={56} height={56} style={{ borderRadius: 8 }} />
         <h2 className="neon logo-gradient" style={{ margin: 0 }}>EDGESIGHT QA</h2>

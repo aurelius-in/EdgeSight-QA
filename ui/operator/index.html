@@ -60,6 +60,28 @@
       /* Inputs */
       input[type="range"] { accent-color: var(--accent-teal); }
       input[type="text"] { background: rgba(12,18,24,0.7); color: var(--fg); border: 1px solid rgba(0,216,255,0.2); border-radius: 8px; padding: 6px 8px; }
+
+      /* Hero */
+      .holo-grid {
+        position: relative;
+        overflow: hidden;
+        border-radius: 16px;
+        background:
+          linear-gradient(180deg, rgba(0,216,255,0.08), rgba(255,0,168,0.08)) padding-box,
+          radial-gradient(1200px 600px at 10% 0%, rgba(255,0,168,0.35), transparent 60%),
+          radial-gradient(1200px 600px at 90% 100%, rgba(0,216,255,0.35), transparent 60%);
+        border: 1px solid rgba(0,216,255,0.25);
+        box-shadow: inset 0 0 100px rgba(0,216,255,0.05);
+      }
+      .holo-grid::before {
+        content: '';
+        position: absolute; inset: 0;
+        background-image: linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+        background-size: 32px 32px, 32px 32px;
+        mix-blend-mode: overlay;
+        animation: drift 20s linear infinite;
+      }
+      @keyframes drift { from { transform: translateY(0) } to { transform: translateY(-32px) } }
     </style>
   </head>
   <body>
