@@ -112,6 +112,7 @@ async def result(request: Request):
     }
     try:
         if isinstance(record.get("latency_ms"), (int, float)):
+            # Record histogram; OTEL bridge can surface exemplars when integrated with Grafana
             e2e_latency_ms.observe(float(record["latency_ms"]))
     except Exception:
         pass

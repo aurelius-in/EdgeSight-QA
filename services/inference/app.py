@@ -71,6 +71,13 @@ def metrics():
 
 @app.post("/infer")
 def infer(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), tensor: UploadFile = File(...), shape: UploadFile = File(...), dtype: UploadFile = File(...)) -> Dict[str, Any]:
+    # Attach span attributes for correlation
+    try:
+        span = trace.get_current_span()
+        span.set_attribute("frame_id", frame_id)
+        span.set_attribute("ts_monotonic_ns", int(ts_monotonic_ns))
+    except Exception:
+        pass
     tensor_bytes = tensor.file.read()
     shape_str = shape.file.read().decode().strip()
     # safe parse for shape like "[3, 360, 640]" or "(3,360,640)"
