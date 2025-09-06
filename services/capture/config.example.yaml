@@ -1,0 +1,13 @@
+site: sample-plant
+line: line-1
+cameras:
+  - id: cam-A
+    source: file:/app/assets/sample.mp4
+    fps: 10
+    resolution: [640, 360]
+    time_sync: ntp.pool.org
+buffer:
+  max_frames: 50
+preprocess_url: http://preprocess:9002/frame
+
+

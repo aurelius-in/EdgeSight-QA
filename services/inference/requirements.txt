@@ -1,0 +1,7 @@
+fastapi==0.112.2
+uvicorn[standard]==0.30.6
+prometheus-client==0.20.0
+numpy==1.26.4
+# onnxruntime-gpu can be large; allowed to be installed externally in GPU images
+# onnxruntime-gpu
+
