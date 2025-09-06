@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { apiBase, startDemo, setThreshold as updateThreshold, setOpcuaEnabled, setDemoForce } from './api'
+import { mockStream } from './mock'
 const inferBase = (import.meta as any).env.VITE_INFERENCE_API_BASE || 'http://localhost:9003'
 
 type EventMsg = { ts: string; frame_id: string; detections: any[]; corr_id?: string; trace_id?: string }
@@ -31,25 +32,47 @@ export default function App() {
 
   useEffect(() => {
     const url = `${apiBase}/events`
-    let es = new EventSource(url)
+    let es: EventSource | null = null
+    let useMock = false
+    try {
+      es = new EventSource(url)
+    } catch {
+      useMock = true
+    }
     let retryMs = 1000
-    es.onopen = () => setSseConnected(true)
-    es.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data)
-        setEvents((prev) => [data, ...prev].slice(0, 50))
-      } catch {}
+    if (es) {
+      es.onopen = () => setSseConnected(true)
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data)
+          setEvents((prev) => [data, ...prev].slice(0, 50))
+        } catch {}
+      }
+      es.onerror = () => {
+        es!.close()
+        setSseConnected(false)
+        setTimeout(() => {
+          try { es = new EventSource(url); evtSourceRef.current = es } catch { useMock = true }
+        }, retryMs)
+        retryMs = Math.min(retryMs * 2, 15000)
+      }
+      evtSourceRef.current = es
     }
-    es.onerror = () => {
-      es.close()
-      setSseConnected(false)
-      setTimeout(() => {
-        es = new EventSource(url)
-      }, retryMs)
-      retryMs = Math.min(retryMs * 2, 15000)
+
+    // Fallback mock stream when backend is unreachable
+    let mockTimer: number | undefined
+    if (!es) useMock = true
+    if (useMock) {
+      setSseConnected(true)
+      const gen = mockStream()
+      const tick = () => {
+        const next = gen.next().value
+        setEvents((prev) => [next, ...prev].slice(0, 50))
+        mockTimer = window.setTimeout(tick, 220)
+      }
+      tick()
     }
-    evtSourceRef.current = es
-    return () => es.close()
+    return () => { if (es) es.close(); if (mockTimer) clearTimeout(mockTimer) }
   }, [])
 
   useEffect(() => {
@@ -177,10 +200,13 @@ export default function App() {
         </label>
       </div>
       <h3 className="neon">Recent Events</h3>
-      <div className="panel" style={{ position: 'relative', width: 640, height: 360 }}>
+      <div className="panel" style={{ position: 'relative', width: 640, height: 360, overflow: 'hidden' }}>
         <img src={frameUrl} alt="last frame" width={640} height={360} style={{ position: 'absolute', top: 0, left: 0 }} />
         <canvas ref={canvasRef} width={640} height={360} style={{ position: 'absolute', top: 0, left: 0 }} />
+        {/* HUD scanline sweep */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,255,200,0) 0%, rgba(0,255,200,0.08) 50%, rgba(0,255,200,0) 100%)', mixBlendMode: 'screen', transform: 'translateY(-100%)', animation: 'sweep 3s linear infinite' }} />
       </div>
+      <style>{`@keyframes sweep { 0% { transform: translateY(-100%) } 100% { transform: translateY(100%) } }`}</style>
       {events[0] && (
         <DrawBoxes canvasRef={canvasRef} detections={filterDetections(events[0].detections, classFilter)} legend={legend} setLegend={setLegend} />
       )}
