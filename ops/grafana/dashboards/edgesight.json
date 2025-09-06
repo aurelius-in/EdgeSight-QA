@@ -13,6 +13,28 @@
       "targets": [ { "expr": "histogram_quantile(0.95, sum(rate(capture_latency_est_ms_bucket[1m])) by (le))" } ],
       "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
     }
+    ,
+    {
+      "type": "graph",
+      "title": "Capture FPS",
+      "targets": [ { "expr": "capture_fps" } ],
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Dropped Frames",
+      "targets": [ { "expr": "rate(capture_frames_dropped_total[1m])" } ],
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Publishes (MQTT/OPC UA)",
+      "targets": [
+        { "expr": "rate(mqtt_published_total[1m])" },
+        { "expr": "rate(opcua_published_total[1m])" }
+      ],
+      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 }
+    }
   ],
   "schemaVersion": 36,
   "version": 1
