@@ -1,0 +1,21 @@
+{
+  "title": "EdgeSight QA",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Results Received",
+      "targets": [ { "expr": "rate(results_received_total[1m])" } ],
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Capture Latency (ms)",
+      "targets": [ { "expr": "histogram_quantile(0.95, sum(rate(capture_latency_est_ms_bucket[1m])) by (le))" } ],
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
+    }
+  ],
+  "schemaVersion": 36,
+  "version": 1
+}
+
+

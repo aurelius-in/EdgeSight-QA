@@ -13,3 +13,15 @@ def test_stub_detection_threshold():
     assert len(det2) == 0
 
 
+def test_runtime_threshold_update(tmp_path):
+    # point config into temp path
+    os = __import__('os')
+    os.environ['INFER_CONFIG_PATH'] = str(tmp_path / 'inference-config.json')
+    eng = InferenceEngine(model_path="dummy.onnx")
+    eng.set_threshold(0.9)
+    arr = np.ones((3, 10, 10), dtype=np.float32) * 0.8
+    assert eng.run(arr) == []
+    eng.set_threshold(0.7)
+    assert len(eng.run(arr)) == 1
+
+
