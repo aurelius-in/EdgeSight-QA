@@ -7,6 +7,8 @@ export default function App() {
   const [events, setEvents] = useState<EventMsg[]>([])
   const [threshold, setThreshold] = useState<number>(0.5)
   const [opcuaEnabled, setOpcua] = useState<boolean>(false)
+  const [latencyP95, setLatencyP95] = useState<number>(0)
+  const [errorMsg, setErrorMsg] = useState<string>('')
   const evtSourceRef = useRef<EventSource | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [frameUrl, setFrameUrl] = useState<string>('')
@@ -27,6 +29,11 @@ export default function App() {
   useEffect(() => {
     const id = setInterval(() => {
       setFrameUrl(`${apiBase}/last_frame?nocache=${Date.now()}`)
+      const d = new Date().toISOString().slice(0,10)
+      fetch(`${apiBase}/governance/summary?date_from=${d}&date_to=${d}`)
+        .then(r => r.json())
+        .then(j => setLatencyP95(j?.latency_p95_ms ?? 0))
+        .catch(() => {})
     }, 1000)
     return () => clearInterval(id)
   }, [])
@@ -36,6 +43,7 @@ export default function App() {
       <h2>EdgeSight QA - Operator</h2>
       <div style={{ display: 'flex', gap: 16 }}>
         <button onClick={() => startDemo()}>Start Demo</button>
+        <span>p95: {latencyP95.toFixed(1)} ms</span>
         <label>
           Threshold: {threshold.toFixed(2)}
           <input
@@ -58,7 +66,7 @@ export default function App() {
             checked={opcuaEnabled}
             onChange={(e) => {
               setOpcua(e.target.checked)
-              setOpcuaEnabled(e.target.checked)
+              setOpcuaEnabled(e.target.checked).catch(() => setErrorMsg('Failed to update OPC UA'))
             }}
           />
         </label>
@@ -82,6 +90,12 @@ export default function App() {
         ))}
       </ul>
     </div>
+    {errorMsg && (
+      <div style={{ position: 'fixed', bottom: 16, right: 16, background: '#f56565', color: 'white', padding: 8 }}>
+        {errorMsg}
+        <button onClick={() => setErrorMsg('')} style={{ marginLeft: 8 }}>x</button>
+      </div>
+    )}
   )
 }
 
