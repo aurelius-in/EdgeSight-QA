@@ -129,16 +129,25 @@ async def result(request: Request):
     governance_signed.inc()
 
     corr_id = request.headers.get("X-Correlation-ID")
+    trace_id_hex = None
+    try:
+        span = trace.get_current_span()
+        ctx = span.get_span_context()
+        if ctx and getattr(ctx, 'trace_id', 0):
+            trace_id_hex = format(ctx.trace_id, '032x')
+    except Exception:
+        trace_id_hex = None
     event = json.dumps({
         "ts": ts,
         "frame_id": record["frame_id"],
         "detections": detections,
         "latency_ms": record.get("latency_ms"),
-        "corr_id": corr_id
+        "corr_id": corr_id,
+        "trace_id": trace_id_hex
     })
     # structured log to stdout
     try:
-        print(json.dumps({"event": "result", "frame_id": record["frame_id"], "ts": ts, "num_detections": len(detections), "corr_id": corr_id}), flush=True)
+        print(json.dumps({"event": "result", "frame_id": record["frame_id"], "ts": ts, "num_detections": len(detections), "corr_id": corr_id, "trace_id": trace_id_hex}), flush=True)
     except Exception:
         pass
     for queue in subscribers:

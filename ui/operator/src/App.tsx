@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { apiBase, startDemo, setThreshold as updateThreshold, setOpcuaEnabled, setDemoForce } from './api'
 const inferBase = (import.meta as any).env.VITE_INFERENCE_API_BASE || 'http://localhost:9003'
 
-type EventMsg = { ts: string; frame_id: string; detections: any[]; corr_id?: string }
+type EventMsg = { ts: string; frame_id: string; detections: any[]; corr_id?: string; trace_id?: string }
 
 export default function App() {
   const [events, setEvents] = useState<EventMsg[]>([])
@@ -126,6 +126,12 @@ export default function App() {
         {events.map((ev, idx) => (
           <li key={idx}>
             {ev.ts} - {ev.frame_id} - dets: {ev.detections?.length ?? 0} {ev.corr_id ? `(corr ${ev.corr_id})` : ''}
+            {ev.trace_id && (
+              <>
+                {' '}<a href={`http://localhost:3000/explore?schemaVersion=1&panes=%7B%22traces%22%3A%7B%22datasource%22%3A%22Tempo%22%2C%22queries%22%3A%5B%7B%22query%22%3A%22{traceId%3D%5C%22${ev.trace_id}%5C%22}%22%7D%5D%7D%7D&orgId=1`}
+                   target="_blank" rel="noreferrer">trace</a>
+              </>
+            )}
             {ev.detections?.map((d: any, j: number) => (
               <span key={j}> [{d.class_id ?? 'cls'}:{(d.score ?? 0).toFixed(2)}]</span>
             ))}
