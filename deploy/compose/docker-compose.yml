@@ -70,6 +70,12 @@ services:
     ports: ["5173:80"]
     depends_on:
       - results_adapter
+    build:
+      context: ../../ui/operator
+      args:
+        VITE_CAPTURE_API_BASE: http://localhost:9001
+        VITE_INFERENCE_API_BASE: http://localhost:9003
+        VITE_RESULTS_ADAPTER_API_BASE: http://localhost:9004
   prometheus:
     image: prom/prometheus
     volumes:

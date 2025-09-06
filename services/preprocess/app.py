@@ -8,6 +8,7 @@ import numpy as np
 import cv2
 import httpx
 from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from prometheus_client import Counter, Gauge, Histogram, CONTENT_TYPE_LATEST, generate_latest
 
@@ -15,6 +16,13 @@ from ops import run_pipeline
 
 
 app = FastAPI(title="EdgeSight QA - Preprocess")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 preprocess_counter = Counter("preprocess_frames_total", "Frames received for preprocessing")
 preprocess_time_ms = Histogram("preprocess_time_ms", "Preprocess step time (ms)", buckets=(1,5,10,20,50,100,200))

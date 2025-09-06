@@ -79,6 +79,11 @@ def patch_config(cfg: Dict[str, Any] = Body(...)):
     return {"updated": updated}
 
 
+@app.get("/config")
+def get_config():
+    return {"conf_threshold": engine.conf_threshold, "demo_force": engine.demo_force, "gpu_in_use": bool(engine.gpu_in_use)}
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "9003")))
 
