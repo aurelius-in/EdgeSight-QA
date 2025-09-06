@@ -8,6 +8,7 @@ import uvicorn
 import requests
 import cv2
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import Counter, Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from fastapi.responses import Response
 
@@ -15,6 +16,14 @@ from camera import CameraConfig, read_frames
 
 
 app = FastAPI(title="EdgeSight QA - Capture")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 frames_sent = Counter("capture_frames_sent_total", "Total frames sent to preprocess")
