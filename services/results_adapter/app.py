@@ -115,3 +115,8 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "9004")))
 
 
+@app.get("/governance/summary")
+def governance_summary(date_from: str, date_to: str):
+    return gov.summarize(date_from, date_to)
+
+
