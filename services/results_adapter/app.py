@@ -62,6 +62,60 @@ import asyncio
 
 OPCUA_ENABLED = os.getenv("OPCUA_ENABLED", "false").lower() in ("1", "true", "yes")
 
+# Readiness state, updated by a background checker
+_mqtt_ready: bool = False
+_opcua_ready: bool = False
+
+async def _periodic_readiness_checks() -> None:
+    global _mqtt_ready, _opcua_ready
+    while True:
+        _mqtt_ready = _check_mqtt()
+        _opcua_ready = _check_opcua() if OPCUA_ENABLED else True
+        await asyncio.sleep(5)
+
+def _check_mqtt() -> bool:
+    try:
+        host = os.getenv("MQTT_BROKER", "mosquitto")
+        port = int(os.getenv("MQTT_PORT", "1883"))
+        import socket
+        with socket.create_connection((host, port), timeout=0.7):
+            return True
+    except Exception:
+        return False
+
+def _parse_host_port_from_endpoint(endpoint: str) -> tuple[str, int] | None:
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(endpoint)
+        host = p.hostname
+        port = p.port
+        if host and port:
+            return host, int(port)
+    except Exception:
+        pass
+    return None
+
+def _check_opcua() -> bool:
+    try:
+        endpoint = os.getenv("OPCUA_ENDPOINT", "")
+        hp = _parse_host_port_from_endpoint(endpoint)
+        if not hp:
+            return False
+        host, port = hp
+        import socket
+        with socket.create_connection((host, port), timeout=0.7):
+            return True
+    except Exception:
+        return False
+
+@app.on_event("startup")
+async def _on_startup():
+    # kick off background readiness checks
+    try:
+        asyncio.create_task(_periodic_readiness_checks())
+    except Exception:
+        pass
+
 @app.get("/healthz")
 def healthz():
     return {"status": "ok"}
@@ -69,7 +123,8 @@ def healthz():
 
 @app.get("/readyz")
 def readyz():
-    return {"status": "ready"}
+    ok = _mqtt_ready and (_opcua_ready if OPCUA_ENABLED else True)
+    return ({"status": "ready"} if ok else Response(status_code=503))
 
 
 @app.get("/metrics")

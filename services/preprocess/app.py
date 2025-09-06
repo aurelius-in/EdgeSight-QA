@@ -51,6 +51,7 @@ preprocess_time_ms = Histogram("preprocess_time_ms", "Preprocess step time (ms)"
 queue_depth = Gauge("preprocess_queue_depth", "Naive queue depth gauge")
 
 _ready = True
+_last_infer_ms = 0.0
 
 
 @app.get("/healthz")
