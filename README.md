@@ -256,6 +256,45 @@ Open the Operator UI at `http://localhost:5173`. Events stream via SSE from the 
 * Environment variables can override any YAML key with `DOT.SEPARATED.KEY=value`
 * Hot reload is supported for non‑structural changes, for example threshold updates
 
+### MQTT configuration (results adapter)
+
+Env vars:
+
+```
+MQTT_BROKER=mosquitto
+MQTT_PORT=1883
+MQTT_USERNAME= (optional)
+MQTT_PASSWORD= (optional)
+MQTT_QOS=1              # 0/1/2
+MQTT_RETAIN=false       # retain flag for alerts
+MQTT_TLS_ENABLED=false  # enable TLS
+MQTT_TLS_INSECURE=false # allow insecure TLS (testing only)
+CONF_THRESHOLD=0.5      # publish when any detection >= threshold
+LINE_ID=line-1
+```
+
+Topics:
+
+```
+edgesight/line/{LINE_ID}/defect
+```
+
+### OPC UA configuration (results adapter)
+
+Env vars:
+
+```
+OPCUA_ENABLED=0
+OPCUA_ENDPOINT=opc.tcp://localhost:4840
+OPCUA_DEFECT_NODE=ns=2;s=Factory.Lines.{line}.QA.LastEvent
+```
+
+When enabled, the adapter writes a JSON string payload to the configured node. Production deployments should use an address space agreed with controls and a trust store for TLS.
+
+### Correlation IDs and tracing
+
+The pipeline propagates an `X-Correlation-ID` header across services, echoed in SSE events and structured logs, to stitch metrics/logs together. Add OpenTelemetry later to emit spans for capture → preprocess → inference → adapter.
+
 ## Deployment
 
 ### Kubernetes / Helm

@@ -98,15 +98,17 @@ async def result(request: Request):
     gov.append_signed(record)
     governance_signed.inc()
 
+    corr_id = request.headers.get("X-Correlation-ID")
     event = json.dumps({
         "ts": ts,
         "frame_id": record["frame_id"],
         "detections": detections,
-        "latency_ms": record.get("latency_ms")
+        "latency_ms": record.get("latency_ms"),
+        "corr_id": corr_id
     })
     # structured log to stdout
     try:
-        print(json.dumps({"event": "result", "frame_id": record["frame_id"], "ts": ts, "num_detections": len(detections)}), flush=True)
+        print(json.dumps({"event": "result", "frame_id": record["frame_id"], "ts": ts, "num_detections": len(detections), "corr_id": corr_id}), flush=True)
     except Exception:
         pass
     for queue in subscribers:

@@ -7,7 +7,7 @@ import uvicorn
 import numpy as np
 import cv2
 import httpx
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from prometheus_client import Counter, Gauge, Histogram, CONTENT_TYPE_LATEST, generate_latest
@@ -47,7 +47,7 @@ def metrics():
 
 
 @app.post("/frame")
-async def frame(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), image: UploadFile = File(...)) -> Dict[str, Any]:
+async def frame(request: Request, frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), image: UploadFile = File(...), corr_id: str | None = Form(None)) -> Dict[str, Any]:
     preprocess_counter.inc()
     queue_depth.inc()
     try:
@@ -73,7 +73,11 @@ async def frame(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), ima
         }
         try:
             async with httpx.AsyncClient() as client:
-                resp = await client.post(infer_url, data=payload, files=files, timeout=5)
+                headers = {}
+                cid = corr_id or request.headers.get("X-Correlation-ID")
+                if cid:
+                    headers["X-Correlation-ID"] = cid
+                resp = await client.post(infer_url, data=payload, files=files, headers=headers, timeout=5)
                 resp.raise_for_status()
                 result = resp.json()
             # Forward to results adapter
@@ -88,7 +92,10 @@ async def frame(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), ima
             }
             try:
                 async with httpx.AsyncClient() as client:
-                    await client.post(results_url, json=out, timeout=3)
+                    headers = {}
+                    if cid:
+                        headers["X-Correlation-ID"] = cid
+                    await client.post(results_url, json=out, headers=headers, timeout=3)
             except Exception:
                 pass
             return result

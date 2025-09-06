@@ -4,6 +4,7 @@ from datetime import datetime, date
 from pathlib import Path
 from statistics import median
 from typing import List, Dict, Any
+import subprocess
 
 from jinja2 import Environment, FileSystemLoader
 from nacl.signing import VerifyKey
@@ -55,6 +56,7 @@ def main():
     ap.add_argument("--from", dest="date_from", required=True)
     ap.add_argument("--to", dest="date_to", required=True)
     ap.add_argument("--out", dest="out", required=True)
+    ap.add_argument("--format", dest="fmt", choices=["md", "pdf"], default="md")
     ap.add_argument("--base", dest="base", default="/app/data/governance")
     args = ap.parse_args()
 
@@ -70,7 +72,13 @@ def main():
     env = Environment(loader=FileSystemLoader(str(Path(__file__).parent / "templates")))
     tmpl = env.get_template("report.md.j2")
     out_text = tmpl.render(period=f"{args.date_from}..{args.date_to}", summary=summary)
-    Path(args.out).write_text(out_text, encoding="utf-8")
+    out_path = Path(args.out)
+    out_path.write_text(out_text, encoding="utf-8")
+    if args.fmt == "pdf":
+        try:
+            subprocess.check_call(["pandoc", str(out_path), "-o", str(out_path.with_suffix(".pdf"))])
+        except Exception as e:
+            raise SystemExit(f"pandoc conversion failed: {e}")
 
 
 if __name__ == "__main__":
