@@ -7,9 +7,10 @@ function Splash({ onDone }: { onDone: () => void }) {
     const id = setTimeout(onDone, 5000)
     return () => clearTimeout(id)
   }, [onDone])
-  const srcWeb = '/media/esqa/esqa.web.mp4'
-  const srcMp4 = '/media/esqa/esqa.mp4'
-  const poster = '/media/esqa/esqa-poster.png'
+  const base = (import.meta as any).env.BASE_URL || '/'
+  const srcWeb = `${base}media/esqa/esqa.web.mp4`
+  const srcMp4 = `${base}media/esqa/esqa.mp4`
+  const poster = `${base}media/esqa/esqa-poster.png`
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'black', display: 'grid', placeItems: 'center' }}>
       <video
