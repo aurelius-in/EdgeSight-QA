@@ -177,7 +177,7 @@ edgesight-qa/
 ### 1) Clone and seed sample assets
 
 ```bash
-git clone https://github.com/aurelius-in/edgesight-qa.git
+git clone https://github.com/your-org/edgesight-qa.git
 cd edgesight-qa
 mkdir -p data/frames data/events
 cp samples/video/line1.mp4 data/sample.mp4
@@ -338,7 +338,7 @@ spec:
     spec:
       containers:
         - name: capture
-          image: ghcr.io/aurelius-in/edgesight-capture:latest
+          image: ghcr.io/your-org/edgesight-capture:latest
           ports: [{ containerPort: 9001 }]
           volumeMounts:
             - name: config
@@ -480,3 +480,185 @@ EPIC: EdgeSight QA - Line 1 Pilot
 - Story: Provenance capture and markdown report generation
 - Story: Performance and failover tests with golden frames
 ```
+
+---
+
+# Tailoring Guide: Denali & Fronterra (Food/Pharma) Readiness
+
+This section distills **how EdgeSight QA maps to the needs of Denali’s AI Software BU** (Ignition-centric, AWS-friendly, regulated delivery with OpenShift/Kubernetes) **and to Fronterra** (food & beverage / process manufacturing with HACCP/SQF-style controls). Use it verbatim in RFPs, screenshares, or as a talking track.
+
+## Who This Is For
+
+* **Systems Integrators (e.g., Denali)** needing an **edge CV stack** that slots into **Ignition**, supports **air‑gapped or near‑air‑gapped** deployments, and scales from **1 line → 25+ lines** with repeatable practices.
+* **Regulated manufacturers (e.g., pharma, food/bev like Fronterra)** that require **traceability, reproducibility, and data hygiene** with clear acceptance criteria (e.g., **99.99% accuracy target for advisory outputs** where required).
+
+## Why It Fits (1‑page summary)
+
+* **Plant‑ready:** MQTT/OPC UA adapters for Ignition; offline‑tolerant queues; operator overlays and alarms; time‑sync and device health baked in.
+* **Regulatory‑aware:** Provenance ledger (model, data, config digests), e‑record/e‑sig hooks, retention policies, audit reports.
+* **Platform‑native:** Kubernetes/OpenShift manifests; optional Terraform modules; artifact bundles for air‑gap installs.
+* **Scale discipline:** Canary rollouts, health‑gated promotion, automated rollback; fleet metrics (latency, FPS, false‑alarm rate).
+
+## Domain Use‑Cases (demo presets)
+
+* **Pharma:** blister‑pack missing pill, vial cap/seal defect, label OCR mismatch, fill‑level variance.
+* **Food & beverage:** foreign‑object detection, cap/crown mis‑seat, under/over‑fill, label skew/date‑code OCR.
+
+> Tip: Include 2–3 domain presets in your `configs/` and a folder of example clips/images for instant demos.
+
+---
+
+## RM‑ODP Viewpack (AbbVie/regulated audiences)
+
+**Enterprise view**: Business goal → Reduce defects/downtime; compliance → traceable decisions; stakeholders → quality, operations, validation.
+
+**Information view**: Artifacts tracked → `dataset.hash`, `model.hash`, `config.digest`, `run.id`, `operator.id`, timestamps; retention & PHI/PII handling policy.
+
+**Computational view**: Services → `capture`, `preprocess`, `inference`, `results‑adapter`, `governance‑exporter`; interfaces → gRPC/REST for internal; MQTT/OPC UA/REST for external.
+
+**Engineering view**: Deploy → Kubernetes/OpenShift; packaging → OCI images; observability → Prometheus exporters + Grafana; storage → local TSDB + cloud sinks when available.
+
+**Technology view**: Jetson Orin NX **or** x86+GPU IPC; PoE cameras + controlled lighting; NTP; secure boot (where supported); registry mirror for air‑gap.
+
+Add these to `docs/rmodp.md` with one figure per view.
+
+---
+
+## IaC & Platform (
+
+Kubernetes/OpenShift + Terraform)
+**Manifests**
+
+```
+deploy/
+  k8s/
+    namespace.yaml
+    capture-deploy.yaml
+    preprocess-deploy.yaml
+    inference-deploy.yaml
+    results-adapter-deploy.yaml
+    services/*.yaml
+    hpa/*.yaml
+  openshift/
+    routes/*.yaml
+    imagestreams/*.yaml
+```
+
+**Helm values (excerpt)**
+
+```
+imagePullPolicy: IfNotPresent
+resources:
+  requests: { cpu: "500m", memory: "1Gi" }
+  limits:   { cpu: "2",    memory: "4Gi", nvidia.com/gpu: 1 }
+probes:
+  liveness:  /healthz
+  readiness: /readyz
+```
+
+**Terraform skeleton** (`deploy/terraform/`)
+
+* `providers.tf` (OpenShift/K8s + optional AWS/Azure)
+* `main.tf` creates namespaces, secrets, configmaps, service accounts, RBAC
+* `outputs.tf` exposes service endpoints for Ignition or gateway
+
+**Air‑gap install**
+
+* `./bin/package_offline.sh` to export Helm charts + images as tarballs
+* Local registry mirror + `ImageContentSourcePolicy` (OpenShift)
+
+---
+
+## Provenance & Compliance Kit
+
+Create `docs/provenance-report.md` describing:
+
+* **Run manifest**: `run.json` (model hash, dataset hash, config digest, code commit, device ID, time window)
+* **Append‑only decision log**: JSONL with signed entries (Ed25519), monotonic timestamps
+* **Report generator**: `governance-exporter` converts logs → human‑readable PDF/Markdown; includes confusion matrix, p95 latency, FPS, error budget adherence
+* **Policy examples**: retention (e.g., 30/90/365), operator access (RBAC), audit export (CSV/PDF, signature block)
+* **Standards mapping (informative)**: FDA 21 CFR Part 11 (e‑records/e‑signatures), GxP/GMP concepts, HACCP/SQF controls (non‑normative guidance)
+
+---
+
+## Acceptance & Test Strategy (incl. 99.99% advisory target)
+
+* **Performance gates**: p95 latency ≤ 200 ms, FPS ≥ target; health probes green for N hours across canary pool
+* **Statistical accuracy gate** (advisory outputs): demonstrate ≥ 99.99% accuracy on N trials with **binomial CI ≥ target**; attach dataset card and sampling method
+* **Stress & failover**: camera unplug/replug; network drop; disk‑full; thermal throttling; verify degraded but safe behavior
+* **Traceability**: each test emits signed `run.json` + decision log for audit
+
+Include sample `tests/` with pytest for services and a `soak.sh` script.
+
+---
+
+## Operator Workflow & Copilot (LLM + CV coexist)
+
+* **Operator UI**: live overlay, threshold slider, last‑N events, “send to re‑inspect”.
+* **Results adapter**: translates model output → Ignition tags/events; supports MQTT, OPC UA, and REST webhooks.
+* **Language model copilot** (optional): natural‑language queries over logs (“show last 24h of cap‑mis‑seat at line 3”), retrieval‑augmented from decision logs; never alters edge decisions.
+
+---
+
+## Hardware BOM (reference)
+
+* **Compute**: NVIDIA Jetson Orin NX **or** x86 IPC + RTX A2000/4000 (fan‑out via PoE switch)
+* **Cameras**: Industrial PoE, fixed lens matched to working distance, polarizing filters as needed
+* **Lighting**: ring/bar, diffusers; strobe option
+* **Networking**: PoE switch, VLAN plan; NTP source
+* **Enclosure**: IP‑rated; thermal plan; mounting hardware
+
+Add `docs/bom.md` with part classes and lead‑time notes.
+
+---
+
+## Jira/Epics Breakdown (copy/paste)
+
+**Epic: Edge capture to decision**
+
+* Story: Implement camera capture service (multi‑camera, time‑sync, buffering)
+* Story: Preprocessing pipeline with configurable steps
+* Story: Inference service with ONNX Runtime/TensorRT; model registry integration
+* Story: Results adapter with Ignition (MQTT/OPC UA) output + REST webhook
+* Story: Health probes, metrics (Prometheus), structured logs
+
+**Epic: Governance & provenance**
+
+* Story: Run manifest + signed decision log
+* Story: Governance exporter → PDF/Markdown
+* Story: Retention & RBAC policy implementation
+
+**Epic: Platform & rollout**
+
+* Story: Helm charts + OpenShift routes; HPA
+* Story: Canary rollout + auto‑rollback; CI/CD wiring
+* Story: Air‑gap artifact bundling + registry mirror
+
+---
+
+## 8‑Minute Demo Runbook
+
+1. **Pick a preset** (pharma or food/bev) → show overlays & adjustable threshold.
+2. **Trigger stress** (toggle network/camera) → show degraded‑but‑safe behavior.
+3. **Open Ignition** → event/alarm arrives; tag path shown.
+4. **Open Grafana** → latency/FPS/false‑alarm trend.
+5. **Open governance report** → signed decisions, model/data hashes.
+
+---
+
+## Two 30‑second spoken pitches
+
+**For Denali**
+“EdgeSight QA is a modular, containerized inspection stack that drops into Ignition and runs on Kubernetes or OpenShift on‑prem. It’s built for air‑gapped environments with registry mirroring, health‑gated rollouts, and a provenance ledger so every decision is auditable. We’ve packaged Terraform/Helm skeletons so your team can scale from one line to dozens without reinventing the deploy each time.”
+
+**For Fronterra**
+“EdgeSight QA targets food and beverage lines where downtime and quality drive margin. It flags under/over‑fill, cap mis‑seats, and label issues in real time on the device, then writes events to your plant systems even if the cloud link is down. A governance report ties each decision back to the model and data used, which supports HACCP/SQF style audits while keeping operators focused on simple overlays and alarms.”
+
+---
+
+## Links to Related Tools
+
+* **PerceptionLab** – experiment and tune pipelines before production (thresholds, overlays, latency visuals).
+* **This repo** – production‑style modules and deployment path.
+
+> After the demo, share PerceptionLab to show you have **more than one** CV tool, then bring them back to EdgeSight QA for the production story.
