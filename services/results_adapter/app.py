@@ -81,6 +81,15 @@ def metrics():
 async def result(request: Request):
     payload = await request.json()
     results_received.inc()
+    try:
+        span = trace.get_current_span()
+        if "frame_id" in payload:
+            span.set_attribute("frame_id", str(payload.get("frame_id")))
+        cid_hdr = request.headers.get("X-Correlation-ID")
+        if cid_hdr:
+            span.set_attribute("corr_id", cid_hdr)
+    except Exception:
+        pass
     line_id = os.getenv("LINE_ID", "line-1")
     threshold = float(os.getenv("CONF_THRESHOLD", "0.5"))
     detections = payload.get("detections", [])

@@ -313,6 +313,8 @@ service:
 
 Env vars (services): `OTEL_ENABLED=1`, `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317`, `OTEL_EXPORTER_OTLP_INSECURE=1`, `OTEL_SERVICE_NAME=<service>`.
 
+To see exemplars in Grafana, pair Prometheus with a traces backend (Grafana Tempo) and enable the OTEL→Tempo pipeline. Grafana can link metrics panels (e.g., e2e latency histograms) to spans when correlation IDs or trace IDs are present.
+
 ## Deployment
 
 ### Kubernetes / Helm
