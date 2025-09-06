@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { apiBase, startDemo, setThreshold as updateThreshold, setOpcuaEnabled, setDemoForce } from './api'
 import { mockStream } from './mock'
+import { NeonCharts } from './visuals'
 const inferBase = (import.meta as any).env.VITE_INFERENCE_API_BASE || 'http://localhost:9003'
 
 type EventMsg = { ts: string; frame_id: string; detections: any[]; corr_id?: string; trace_id?: string }
@@ -30,6 +31,9 @@ export default function App() {
   const [avgPreMs, setAvgPreMs] = useState<number>(0)
   const [avgInferMs, setAvgInferMs] = useState<number>(0)
   const [showHero, setShowHero] = useState<boolean>(true)
+  const [latSeries, setLatSeries] = useState<number[]>([])
+  const [classCounts, setClassCounts] = useState<Record<string, number>>({})
+  const [mqttRate, setMqttRate] = useState<number>(0)
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -110,6 +114,9 @@ export default function App() {
         if (m2) setMqttCount(parseFloat(m2[1]))
         const m3 = /opcua_published_total\s+(\d+(?:\.\d+)?)/.exec(txt)
         if (m3) setOpcuaCount(parseFloat(m3[1]))
+        const e2sum = /e2e_latency_ms_sum\s+(\d+(?:\.\d+)?)/.exec(txt)
+        const e2cnt = /e2e_latency_ms_count\s+(\d+(?:\.\d+)?)/.exec(txt)
+        if (e2sum && e2cnt) setLatSeries(prev => [...prev.slice(-119), parseFloat(e2sum[1]) / Math.max(1, parseFloat(e2cnt[1]))])
       }).catch(()=>{})
       fetch('http://localhost:9001/metrics').then(r=>r.text()).then(txt => {
         const f = /capture_fps\s+(\d+(?:\.\d+)?)/.exec(txt)
@@ -134,6 +141,18 @@ export default function App() {
           setAvgInferMs(avg)
         }
       }).catch(()=>{})
+      // Update class mix and mqtt rate from last event snapshot
+      const cur = events[0]
+      if (cur) {
+        const nextCounts = { ...classCounts }
+        cur.detections?.forEach((d: any) => { const k = String(d.class_id || d.label || 'cls'); nextCounts[k] = (nextCounts[k] || 0) + 1 })
+        setClassCounts(nextCounts)
+      }
+      // mqttRate: diff over 1s using mqttCount
+      setMqttRate(prev => {
+        // crude approach: we rely on mqttCount delta per second
+        return Math.max(0, mqttCount - prev)
+      })
     }, 1000)
     return () => clearInterval(id)
   }, [])
@@ -238,6 +257,10 @@ export default function App() {
         <DrawBoxes canvasRef={canvasRef} detections={filterDetections(events[0].detections, classFilter)} legend={legend} setLegend={setLegend} />
       )}
       <Legend legend={legend} />
+      <div className="panel" style={{ padding: 12, marginTop: 12 }}>
+        <h3 className="neon" style={{ marginTop: 0 }}>Pipeline Telemetry</h3>
+        <NeonCharts width={640} height={220} latencySeries={latSeries} classCounts={classCounts} mqttPerSec={mqttRate} />
+      </div>
       <ul className="panel" style={{ padding: 12 }}>
         {events.map((ev, idx) => (
           <li key={idx}>
