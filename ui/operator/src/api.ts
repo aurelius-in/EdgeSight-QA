@@ -8,4 +8,18 @@ export async function startDemo() {
   }
 }
 
+export async function setThreshold(value: number) {
+  try {
+    const res = await fetch('http://localhost:9003/config', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conf_threshold: value })
+    })
+    return await res.json()
+  } catch (e) {
+    console.warn('Failed to set threshold', e)
+    return null
+  }
+}
+
 

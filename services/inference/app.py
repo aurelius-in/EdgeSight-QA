@@ -4,7 +4,7 @@ import time
 from typing import Dict, Any, List
 
 import numpy as np
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, UploadFile, Form, Body
 from fastapi.responses import Response
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 import uvicorn
@@ -50,6 +50,16 @@ def infer(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), tensor: U
     infer_ms.observe((t1 - t0) * 1000.0)
     num_detections.observe(len(detections))
     return {"frame_id": frame_id, "ts_monotonic_ns": ts_monotonic_ns, "detections": detections}
+
+
+@app.patch("/config")
+def patch_config(cfg: Dict[str, Any] = Body(...)):
+    threshold = cfg.get("conf_threshold")
+    updated = {}
+    if threshold is not None:
+        engine.set_threshold(float(threshold))
+        updated["conf_threshold"] = engine.conf_threshold
+    return {"updated": updated}
 
 
 if __name__ == "__main__":

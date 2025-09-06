@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { apiBase, startDemo } from './api'
+import { apiBase, startDemo, setThreshold } from './api'
 
 type EventMsg = { ts: string; frame_id: string; detections: any[] }
 
@@ -34,7 +34,11 @@ export default function App() {
             max={1}
             step={0.01}
             value={threshold}
-            onChange={(e) => setThreshold(parseFloat(e.target.value))}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value)
+              setThreshold(v)
+              setThreshold(v)
+            }}
           />
         </label>
       </div>
