@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
@@ -51,5 +51,31 @@ class GovernanceLogger:
             return True
         except (KeyError, BadSignatureError, ValueError):
             return False
+
+    def summarize(self, date_from: str, date_to: str) -> Dict[str, Any]:
+        start = datetime.strptime(date_from, "%Y-%m-%d").date()
+        end = datetime.strptime(date_to, "%Y-%m-%d").date()
+        totals = 0
+        invalid = 0
+        detections = 0
+        for day_dir in sorted(self.base_dir.glob("*")):
+            try:
+                d = datetime.strptime(day_dir.name, "%Y-%m-%d").date()
+            except ValueError:
+                continue
+            if d < start or d > end:
+                continue
+            log = day_dir / "decision.log.jsonl"
+            if not log.exists():
+                continue
+            for line in log.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                wrapped = json.loads(line)
+                totals += 1
+                if not self.verify_record(wrapped):
+                    invalid += 1
+                detections += len(wrapped.get("record", {}).get("detections", []))
+        return {"total": totals, "invalid": invalid, "detections": detections}
 
 
