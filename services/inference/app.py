@@ -10,7 +10,7 @@ from fastapi.responses import Response
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 import uvicorn
 
-from .infer import InferenceEngine
+from infer import InferenceEngine
 
 
 app = FastAPI(title="EdgeSight QA - Inference")

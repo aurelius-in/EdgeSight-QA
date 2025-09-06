@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from prometheus_client import Counter, Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from fastapi.responses import Response
 
-from .camera import CameraConfig, read_frames
+from camera import CameraConfig, read_frames
 
 
 app = FastAPI(title="EdgeSight QA - Capture")
