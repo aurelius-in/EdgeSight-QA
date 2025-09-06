@@ -293,7 +293,25 @@ When enabled, the adapter writes a JSON string payload to the configured node. P
 
 ### Correlation IDs and tracing
 
-The pipeline propagates an `X-Correlation-ID` header across services, echoed in SSE events and structured logs, to stitch metrics/logs together. Add OpenTelemetry later to emit spans for capture → preprocess → inference → adapter.
+The pipeline propagates an `X-Correlation-ID` header across services, echoed in SSE events and structured logs, to stitch metrics/logs together. OpenTelemetry can be enabled via envs to emit spans for capture → preprocess → inference → adapter.
+
+Minimal collector setup (OTLP gRPC at 4317):
+
+```
+receivers:
+  otlp:
+    protocols:
+      grpc:
+exporters:
+  logging: {}
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [logging]
+```
+
+Env vars (services): `OTEL_ENABLED=1`, `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317`, `OTEL_EXPORTER_OTLP_INSECURE=1`, `OTEL_SERVICE_NAME=<service>`.
 
 ## Deployment
 

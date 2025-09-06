@@ -9,6 +9,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 import uvicorn
+from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from infer import InferenceEngine
 
@@ -22,6 +28,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# OpenTelemetry minimal bootstrap
+def _init_tracing():
+    import os
+    if os.getenv("OTEL_ENABLED", "1").lower() in ("1", "true", "yes"):
+        endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317")
+        insecure = os.getenv("OTEL_EXPORTER_OTLP_INSECURE", "1").lower() in ("1", "true", "yes")
+        resource = Resource.create({"service.name": os.getenv("OTEL_SERVICE_NAME", "inference")})
+        provider = TracerProvider(resource=resource)
+        exporter = OTLPSpanExporter(endpoint=endpoint, insecure=insecure)
+        provider.add_span_processor(BatchSpanProcessor(exporter))
+        trace.set_tracer_provider(provider)
+        FastAPIInstrumentor().instrument_app(app)
+
+_init_tracing()
 
 infer_ms = Histogram("model_infer_ms", "Model inference time (ms)", buckets=(1,5,10,20,50,100,200,500))
 num_detections = Histogram("n_detections", "Number of detections per frame", buckets=(0,1,2,3,5,10))

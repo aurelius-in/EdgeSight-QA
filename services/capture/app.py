@@ -7,6 +7,13 @@ from typing import Optional, Deque, Tuple
 import uvicorn
 import requests
 import cv2
+from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 import uuid
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,6 +32,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# OpenTelemetry minimal bootstrap
+def _init_tracing():
+    if os.getenv("OTEL_ENABLED", "1").lower() in ("1", "true", "yes"):
+        endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317")
+        insecure = os.getenv("OTEL_EXPORTER_OTLP_INSECURE", "1").lower() in ("1", "true", "yes")
+        resource = Resource.create({"service.name": os.getenv("OTEL_SERVICE_NAME", "capture")})
+        provider = TracerProvider(resource=resource)
+        exporter = OTLPSpanExporter(endpoint=endpoint, insecure=insecure)
+        provider.add_span_processor(BatchSpanProcessor(exporter))
+        trace.set_tracer_provider(provider)
+        FastAPIInstrumentor().instrument_app(app)
+        RequestsInstrumentor().instrument()
+
+_init_tracing()
 
 
 frames_sent = Counter("capture_frames_sent_total", "Total frames sent to preprocess")

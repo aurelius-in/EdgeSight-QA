@@ -10,6 +10,12 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 from prometheus_client import Counter, Histogram, CONTENT_TYPE_LATEST, generate_latest
+from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from sink_mqtt import publish_mqtt
 from sink_opcua import write_defect_tag
@@ -26,6 +32,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# OpenTelemetry minimal bootstrap
+def _init_tracing():
+    if os.getenv("OTEL_ENABLED", "1").lower() in ("1", "true", "yes"):
+        endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317")
+        insecure = os.getenv("OTEL_EXPORTER_OTLP_INSECURE", "1").lower() in ("1", "true", "yes")
+        resource = Resource.create({"service.name": os.getenv("OTEL_SERVICE_NAME", "results-adapter")})
+        provider = TracerProvider(resource=resource)
+        exporter = OTLPSpanExporter(endpoint=endpoint, insecure=insecure)
+        provider.add_span_processor(BatchSpanProcessor(exporter))
+        trace.set_tracer_provider(provider)
+        FastAPIInstrumentor().instrument_app(app)
+
+_init_tracing()
 
 results_received = Counter("results_received_total", "Results received from inference")
 mqtt_published = Counter("mqtt_published_total", "MQTT messages published")
