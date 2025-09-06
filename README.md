@@ -177,7 +177,7 @@ edgesight-qa/
 ### 1) Clone and seed sample assets
 
 ```bash
-git clone https://github.com/your-org/edgesight-qa.git
+git clone https://github.com/aurelius-in/edgesight-qa.git
 cd edgesight-qa
 mkdir -p data/frames data/events
 cp samples/video/line1.mp4 data/sample.mp4
@@ -338,7 +338,7 @@ spec:
     spec:
       containers:
         - name: capture
-          image: ghcr.io/your-org/edgesight-capture:latest
+          image: ghcr.io/aurelius-in/edgesight-capture:latest
           ports: [{ containerPort: 9001 }]
           volumeMounts:
             - name: config
