@@ -9,7 +9,7 @@ services:
     environment:
       - PREPROCESS_URL=http://preprocess:9002/frame
       - FRAME_RATE_CAP=5
-      - CAMERA_URL=${CAMERA_URL:-file:/app/assets/sample.mp4}
+      - CAMERA_URL=${CAMERA_URL:-synthetic}
       - FRAME_WIDTH=640
       - FRAME_HEIGHT=360
       - CAPTURE_AUTOSTART=${CAPTURE_AUTOSTART:-true}
