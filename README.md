@@ -130,40 +130,22 @@ ns=2;s=Factory.Lines.Line3.QA.Threshold
 ## Repository Layout
 
 ```
-edgesight-qa/
-├─ edge/
-│  ├─ capture-service/
-│  ├─ preprocess-service/
-│  ├─ inference-service/
-│  └─ results-adapter/
-├─ ui/
-│  └─ operator-app/
-├─ deploy/
-│  ├─ docker-compose.yml
-│  ├─ k8s/
-│  │  ├─ namespace.yaml
-│  │  ├─ capture-deployment.yaml
-│  │  ├─ preprocess-deployment.yaml
-│  │  ├─ inference-deployment.yaml
-│  │  ├─ adapter-deployment.yaml
-│  │  └─ services.yaml
-│  └─ openshift/
-├─ config/
-│  ├─ cameras.yaml
-│  ├─ preprocess.yaml
-│  ├─ model.yaml
-│  └─ outputs.yaml
-├─ ops/
-│  ├─ grafana-dashboards/
-│  ├─ prometheus-scrape.yaml
-│  └─ scripts/
-├─ tests/
-│  ├─ unit/
-│  ├─ integration/
-│  └─ golden-frames/
-└─ docs/
-   ├─ architecture.png
-   └─ provenance-report-template.md
+services/
+  capture/
+  preprocess/
+  inference/
+  results_adapter/
+  governance_exporter/
+ui/operator/
+deploy/
+  compose/docker-compose.yml
+  k8s/base/*.yaml
+  helm/edgesight-qa/*
+  openshift/*.yaml
+  terraform/*
+assets/
+scripts/
+docs/
 ```
 
 ## Quickstart
@@ -174,13 +156,12 @@ edgesight-qa/
 * Optional: NVIDIA Container Toolkit if using a GPU
 * Git, Python 3.10+, Node 18+ for local builds
 
-### 1) Clone and seed sample assets
+### 1) Clone and seed demo assets
 
 ```bash
 git clone https://github.com/your-org/edgesight-qa.git
 cd edgesight-qa
-mkdir -p data/frames data/events
-cp samples/video/line1.mp4 data/sample.mp4
+./scripts/fetch_demo_model.sh assets  # Windows: run via WSL or manually download to assets/
 ```
 
 ### 2) Configure a synthetic camera
@@ -257,62 +238,17 @@ storage:
     bucket: edgesight-events
 ```
 
-### 6) Run with Docker Compose
+### 2) Run with Docker Compose
 
-`deploy/docker-compose.yml`
-
-```yaml
-version: "3.8"
-services:
-  capture:
-    build: ../edge/capture-service
-    volumes:
-      - ../config:/app/config
-      - ../data:/app/data
-    environment:
-      - CAM_CONFIG=/app/config/cameras.yaml
-    ports: ["9001:9001"]
-  preprocess:
-    build: ../edge/preprocess-service
-    volumes:
-      - ../config:/app/config
-    environment:
-      - PREPROC_CONFIG=/app/config/preprocess.yaml
-    ports: ["9002:9002"]
-  inference:
-    build: ../edge/inference-service
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
-    volumes:
-      - ../config:/app/config
-      - ../models:/app/models
-    environment:
-      - MODEL_CONFIG=/app/config/model.yaml
-    ports: ["9003:9003"]
-  adapter:
-    build: ../edge/results-adapter
-    volumes:
-      - ../config:/app/config
-      - ../data:/app/data
-    environment:
-      - OUTPUTS_CONFIG=/app/config/outputs.yaml
-    ports: ["9004:9004", "1883:1883"]
-  ui:
-    build: ../ui/operator-app
-    ports: ["5173:5173"]
-```
-
-Start the stack:
+Start the stack and demo:
 
 ```bash
-cd deploy
-docker compose up --build
+docker compose -f deploy/compose/docker-compose.yml up --build -d
+curl -X POST http://localhost:9001/start
+open http://localhost:5173  # on Windows, browse manually
 ```
 
-Open the Operator UI at `http://localhost:5173`.
+Open the Operator UI at `http://localhost:5173`. Events stream via SSE from the results adapter.
 
 ## Configuration
 
@@ -322,39 +258,19 @@ Open the Operator UI at `http://localhost:5173`.
 
 ## Deployment
 
-### Kubernetes
+### Kubernetes / Helm
 
-`deploy/k8s/capture-deployment.yaml`
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata: { name: capture, namespace: edgesight }
-spec:
-  replicas: 1
-  selector: { matchLabels: { app: capture } }
-  template:
-    metadata: { labels: { app: capture } }
-    spec:
-      containers:
-        - name: capture
-          image: ghcr.io/your-org/edgesight-capture:latest
-          ports: [{ containerPort: 9001 }]
-          volumeMounts:
-            - name: config
-              mountPath: /app/config
-          livenessProbe: { httpGet: { path: /healthz, port: 9001 }, initialDelaySeconds: 10, periodSeconds: 10 }
-          readinessProbe:{ httpGet: { path: /readyz,  port: 9001 }, initialDelaySeconds: 5,  periodSeconds: 5 }
-      volumes:
-        - name: config
-          configMap: { name: edgesight-config }
-```
-
-Apply manifests:
+Apply base manifests:
 
 ```bash
-kubectl apply -f deploy/k8s/namespace.yaml
-kubectl apply -f deploy/k8s
+kubectl apply -f deploy/k8s/base
+```
+
+Or install via Helm:
+
+```bash
+helm install edgesight-qa deploy/helm/edgesight-qa -n edgesight --create-namespace \
+  --set image.repository=ghcr.io/your-org --set image.tag=latest
 ```
 
 ### OpenShift notes
@@ -363,11 +279,15 @@ kubectl apply -f deploy/k8s
 * Annotate pods for GPU scheduling where applicable
 * Route Operator UI through an OpenShift Route
 
-### Air gapped or restricted networks
+### Air‑gap packaging
 
-* Use a local registry mirror
-* Preload images on the edge device
-* Sync events and frames to an on‑prem object store, then to cloud on schedule
+Use the helper script to bundle images and charts:
+
+```bash
+./scripts/package_offline.sh
+```
+
+Load images on the target and configure a registry mirror or ImageContentSourcePolicy (OpenShift). See `deploy/helm/edgesight-qa/values.yaml` for environment overrides.
 
 ## Observability
 
@@ -425,6 +345,20 @@ Run tests:
 ```bash
 pytest -q
 ```
+
+## Ignition hookup notes
+
+- MQTT topic: `edgesight/line/{line_id}/defect`
+- Example payload includes `frame_id`, `detections[]`, `ts`, `model_hash`, `config_digest`.
+- OPC UA: stub `write_defect_tag(line_id, payload)` provided; replace with plant tag writes.
+
+## Troubleshooting
+
+- Camera URL: set `CAMERA_URL=file:/app/assets/sample.mp4` for demo; RTSP URLs also supported.
+- Time sync: ensure device NTP/PTP; pipeline uses monotonic timestamps.
+- GPU: if using NVIDIA GPUs, install NVIDIA Container Toolkit; CPU fallback is supported.
+- Permissions: bind‑mount `assets/` for model/video files; ensure readable by containers.
+- Windows: if `scripts/fetch_demo_model.sh` cannot run, download a small ONNX model and a short MP4 clip into `assets/` manually.
 
 ## Performance Tuning
 
