@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { apiBase, startDemo, setThreshold as updateThreshold, setOpcuaEnabled, setDemoForce } from './api'
 const inferBase = (import.meta as any).env.VITE_INFERENCE_API_BASE || 'http://localhost:9003'
 
-type EventMsg = { ts: string; frame_id: string; detections: any[] }
+type EventMsg = { ts: string; frame_id: string; detections: any[]; corr_id?: string }
 
 export default function App() {
   const [events, setEvents] = useState<EventMsg[]>([])
@@ -125,7 +125,7 @@ export default function App() {
       <ul>
         {events.map((ev, idx) => (
           <li key={idx}>
-            {ev.ts} - {ev.frame_id} - dets: {ev.detections?.length ?? 0}
+            {ev.ts} - {ev.frame_id} - dets: {ev.detections?.length ?? 0} {ev.corr_id ? `(corr ${ev.corr_id})` : ''}
             {ev.detections?.map((d: any, j: number) => (
               <span key={j}> [{d.class_id ?? 'cls'}:{(d.score ?? 0).toFixed(2)}]</span>
             ))}

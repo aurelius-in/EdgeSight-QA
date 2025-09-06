@@ -156,7 +156,16 @@ def _capture_loop():
             # send preview opportunistically
             try:
                 preview_url = os.getenv("PREVIEW_URL", "http://results_adapter:9004/frame_preview")
-                requests.post(preview_url, data=_buffer[-1][2], headers={"X-Correlation-ID": f"f{frame_id}"}, timeout=0.2)
+                corr_header = {"X-Correlation-ID": f"f{frame_id}"}
+                try:
+                    from opentelemetry import trace as _trace
+                    span = _trace.get_current_span()
+                    span.set_attribute("frame_id", int(frame_id))
+                    span.set_attribute("preview", True)
+                    span.set_attribute("corr_id", corr_header["X-Correlation-ID"])
+                except Exception:
+                    pass
+                requests.post(preview_url, data=_buffer[-1][2], headers=corr_header, timeout=0.2)
             except Exception:
                 pass
 
