@@ -4,4 +4,5 @@ prometheus-client==0.20.0
 numpy==1.26.4
 # onnxruntime-gpu can be large; allowed to be installed externally in GPU images
 # onnxruntime-gpu
+requests==2.32.3
 
