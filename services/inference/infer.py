@@ -13,11 +13,13 @@ class InferenceEngine:
         self.gpu_in_use = bool(int(os.getenv("GPU_IN_USE", "0")))
         self.ready = True
         self.config_path = Path(os.getenv("INFER_CONFIG_PATH", "./inference-config.json"))
-        self.conf_threshold = self._load_threshold() or float(os.getenv("CONF_THRESHOLD", "0.5"))
+        cfg = self._load_config()
+        self.conf_threshold = cfg.get("conf_threshold", float(os.getenv("CONF_THRESHOLD", "0.5")))
+        self.demo_force = cfg.get("demo_force", os.getenv("DEMO_FORCE", "0") in ("1", "true", "yes"))
 
     def run(self, tensor_chw: np.ndarray) -> List[Dict[str, Any]]:
         # Demo stub: optionally force one detection
-        if os.getenv("DEMO_FORCE", "0") in ("1", "true", "yes"):
+        if self.demo_force:
             return [{"bbox": [10, 10, 50, 40], "score": 0.9, "class_id": 0}]
         # Otherwise emit one fake detection when average intensity crosses threshold
         avg = float(np.clip(tensor_chw.mean(), 0.0, 1.0))
@@ -26,22 +28,36 @@ class InferenceEngine:
             return [{"bbox": [10, 10, 50, 40], "score": conf, "class_id": 0}]
         return []
 
-    def _load_threshold(self) -> Optional[float]:
+    def _load_config(self) -> Dict[str, Any]:
         try:
             if self.config_path.exists():
                 data = json.loads(self.config_path.read_text(encoding="utf-8"))
-                v = float(data.get("conf_threshold"))
-                return v
+                if not isinstance(data, dict):
+                    return {}
+                return data
         except Exception:
-            return None
-        return None
+            return {}
+        return {}
 
     def set_threshold(self, value: float) -> None:
         self.conf_threshold = float(value)
         try:
-            self.config_path.write_text(json.dumps({"conf_threshold": self.conf_threshold}, indent=2), encoding="utf-8")
+            self.config_path.write_text(json.dumps({
+                "conf_threshold": self.conf_threshold,
+                "demo_force": bool(self.demo_force)
+            }, indent=2), encoding="utf-8")
         except Exception:
             # Best-effort persistence
+            pass
+
+    def set_demo_force(self, enabled: bool) -> None:
+        self.demo_force = bool(enabled)
+        try:
+            self.config_path.write_text(json.dumps({
+                "conf_threshold": self.conf_threshold,
+                "demo_force": bool(self.demo_force)
+            }, indent=2), encoding="utf-8")
+        except Exception:
             pass
 
 

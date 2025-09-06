@@ -64,10 +64,14 @@ def infer(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), tensor: U
 @app.patch("/config")
 def patch_config(cfg: Dict[str, Any] = Body(...)):
     threshold = cfg.get("conf_threshold")
+    demo_force = cfg.get("demo_force")
     updated = {}
     if threshold is not None:
         engine.set_threshold(float(threshold))
         updated["conf_threshold"] = engine.conf_threshold
+    if demo_force is not None:
+        engine.set_demo_force(bool(demo_force))
+        updated["demo_force"] = engine.demo_force
     return {"updated": updated}
 
 

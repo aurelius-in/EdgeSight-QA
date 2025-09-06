@@ -37,4 +37,18 @@ export async function setOpcuaEnabled(enabled: boolean) {
   }
 }
 
+export async function setDemoForce(enabled: boolean) {
+  try {
+    const res = await fetch(`${inferenceBase}/config`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ demo_force: enabled })
+    })
+    return await res.json()
+  } catch (e) {
+    console.warn('Failed to set demo_force', e)
+    return null
+  }
+}
+
 

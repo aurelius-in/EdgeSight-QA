@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { apiBase, startDemo, setThreshold as updateThreshold, setOpcuaEnabled } from './api'
+import { apiBase, startDemo, setThreshold as updateThreshold, setOpcuaEnabled, setDemoForce } from './api'
 
 type EventMsg = { ts: string; frame_id: string; detections: any[] }
 
@@ -12,6 +12,7 @@ export default function App() {
   const [resultsCount, setResultsCount] = useState<number>(0)
   const [mqttCount, setMqttCount] = useState<number>(0)
   const [adapterUp, setAdapterUp] = useState<boolean>(false)
+  const [demoForce, setDemo] = useState<boolean>(true)
   const evtSourceRef = useRef<EventSource | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [frameUrl, setFrameUrl] = useState<string>('')
@@ -80,6 +81,17 @@ export default function App() {
             onChange={(e) => {
               setOpcua(e.target.checked)
               setOpcuaEnabled(e.target.checked).catch(() => setErrorMsg('Failed to update OPC UA'))
+            }}
+          />
+        </label>
+        <label>
+          Demo Force
+          <input
+            type="checkbox"
+            checked={demoForce}
+            onChange={(e) => {
+              setDemo(e.target.checked)
+              setDemoForce(e.target.checked).catch(()=> setErrorMsg('Failed to update demo mode'))
             }}
           />
         </label>
