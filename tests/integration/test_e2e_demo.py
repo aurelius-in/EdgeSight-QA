@@ -8,9 +8,9 @@ def test_e2e_demo_flow():
         requests.post("http://localhost:9001/start", timeout=2)
     except Exception:
         pass
-    # lower threshold
+    # lower threshold and enable offline mode
     try:
-        requests.patch("http://localhost:9003/config", json={"conf_threshold": 0.0, "demo_force": True}, timeout=2)
+        requests.patch("http://localhost:9003/config", json={"conf_threshold": 0.0, "offline_force": True}, timeout=2)
     except Exception:
         pass
     # wait and check adapter metrics

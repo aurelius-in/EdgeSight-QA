@@ -42,7 +42,7 @@ services:
     environment:
       - MODEL_PATH=/app/assets/yolov8n.onnx
       - CONF_THRESHOLD=${CONF_THRESHOLD:-0.5}
-      - DEMO_FORCE=${DEMO_FORCE:-1}
+      - OFFLINE_FORCE=${OFFLINE_FORCE:-1}
     ports: ["9003:9003"]
     volumes:
       - ../../assets:/app/assets:ro
@@ -66,7 +66,6 @@ services:
       timeout: 3s
       retries: 10
   ui:
-    build: ../../ui/operator
     ports: ["5173:80"]
     depends_on:
       - results_adapter

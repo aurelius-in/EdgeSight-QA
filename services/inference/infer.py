@@ -31,11 +31,15 @@ class InferenceEngine:
         self.config_path = Path(os.getenv("INFER_CONFIG_PATH", "./inference-config.json"))
         cfg = self._load_config()
         self.conf_threshold = cfg.get("conf_threshold", float(os.getenv("CONF_THRESHOLD", "0.5")))
-        self.demo_force = cfg.get("demo_force", os.getenv("DEMO_FORCE", "0") in ("1", "true", "yes"))
+        # Prefer OFFLINE_FORCE; support legacy DEMO_FORCE for compatibility
+        offline_env = os.getenv("OFFLINE_FORCE")
+        if offline_env is None:
+            offline_env = os.getenv("DEMO_FORCE", "0")
+        self.offline_force = cfg.get("offline_force", str(offline_env).lower() in ("1", "true", "yes"))
 
     def run(self, tensor_chw: np.ndarray) -> List[Dict[str, Any]]:
         # Demo stub: optionally force one detection
-        if self.demo_force:
+        if self.offline_force:
             return [{"bbox": [10, 10, 50, 40], "score": 0.9, "class_id": 0}]
         # If a real ONNX session exists, we could run it (placeholder)
         try:
@@ -69,18 +73,18 @@ class InferenceEngine:
         try:
             self.config_path.write_text(json.dumps({
                 "conf_threshold": self.conf_threshold,
-                "demo_force": bool(self.demo_force)
+                "offline_force": bool(self.offline_force)
             }, indent=2), encoding="utf-8")
         except Exception:
             # Best-effort persistence
             pass
 
-    def set_demo_force(self, enabled: bool) -> None:
-        self.demo_force = bool(enabled)
+    def set_offline_force(self, enabled: bool) -> None:
+        self.offline_force = bool(enabled)
         try:
             self.config_path.write_text(json.dumps({
                 "conf_threshold": self.conf_threshold,
-                "demo_force": bool(self.demo_force)
+                "offline_force": bool(self.offline_force)
             }, indent=2), encoding="utf-8")
         except Exception:
             pass

@@ -13,7 +13,7 @@ export default function App() {
   const [resultsCount, setResultsCount] = useState<number>(0)
   const [mqttCount, setMqttCount] = useState<number>(0)
   const [adapterUp, setAdapterUp] = useState<boolean>(false)
-  const [demoForce, setDemo] = useState<boolean>(true)
+  const [offlineForce, setOffline] = useState<boolean>(true)
   const [opcuaCount, setOpcuaCount] = useState<number>(0)
   const evtSourceRef = useRef<EventSource | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -44,7 +44,7 @@ export default function App() {
     // initialize from inference config
     fetch(`${inferBase}/config`).then(r=>r.json()).then(cfg => {
       if (typeof cfg?.conf_threshold === 'number') setThreshold(cfg.conf_threshold)
-      if (typeof cfg?.demo_force === 'boolean') setDemo(cfg.demo_force)
+      if (typeof cfg?.offline_force === 'boolean') setOffline(cfg.offline_force)
     }).catch(()=>{})
     const id = setInterval(() => {
       setFrameUrl(`${apiBase}/last_frame?nocache=${Date.now()}`)
@@ -103,13 +103,13 @@ export default function App() {
           />
         </label>
         <label>
-          Demo Force
+          Offline Mode (synthetic data)
           <input
             type="checkbox"
-            checked={demoForce}
+            checked={offlineForce}
             onChange={(e) => {
-              setDemo(e.target.checked)
-              setDemoForce(e.target.checked).catch(()=> setErrorMsg('Failed to update demo mode'))
+              setOffline(e.target.checked)
+              setDemoForce(e.target.checked).catch(()=> setErrorMsg('Failed to update offline mode'))
             }}
           />
         </label>
