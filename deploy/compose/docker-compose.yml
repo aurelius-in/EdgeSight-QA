@@ -12,6 +12,7 @@ services:
       - CAMERA_URL=${CAMERA_URL:-file:/app/assets/sample.mp4}
       - FRAME_WIDTH=640
       - FRAME_HEIGHT=360
+      - CAPTURE_AUTOSTART=${CAPTURE_AUTOSTART:-true}
     ports: ["9001:9001"]
     depends_on:
       - preprocess

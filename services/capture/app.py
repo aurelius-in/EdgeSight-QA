@@ -118,3 +118,12 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "9001")))
 
 
+@app.on_event("startup")
+def _maybe_autostart():
+    if os.getenv("CAPTURE_AUTOSTART", "false").lower() in ("1", "true", "yes"):
+        try:
+            start()
+        except Exception:
+            pass
+
+
