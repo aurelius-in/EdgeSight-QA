@@ -5,5 +5,16 @@ datasources:
     access: proxy
     url: http://prometheus:9090
     isDefault: true
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      tracesToLogsV2:
+        tags: ["frame_id", "corr_id"]
+      tracesToMetrics:
+        datasourceUid: Prometheus
+      serviceMap:
+        datasourceUid: Prometheus
 
 
