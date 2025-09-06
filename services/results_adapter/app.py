@@ -95,7 +95,8 @@ async def result(request: Request):
     event = json.dumps({
         "ts": ts,
         "frame_id": record["frame_id"],
-        "detections": detections
+        "detections": detections,
+        "latency_ms": record.get("latency_ms")
     })
     # structured log to stdout
     try:

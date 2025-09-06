@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { apiBase, startDemo, setThreshold as updateThreshold, setOpcuaEnabled, setDemoForce } from './api'
+const inferBase = (import.meta as any).env.VITE_INFERENCE_API_BASE || 'http://localhost:9003'
 
 type EventMsg = { ts: string; frame_id: string; detections: any[] }
 
@@ -40,6 +41,11 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    // initialize from inference config
+    fetch(`${inferBase}/config`).then(r=>r.json()).then(cfg => {
+      if (typeof cfg?.conf_threshold === 'number') setThreshold(cfg.conf_threshold)
+      if (typeof cfg?.demo_force === 'boolean') setDemo(cfg.demo_force)
+    }).catch(()=>{})
     const id = setInterval(() => {
       setFrameUrl(`${apiBase}/last_frame?nocache=${Date.now()}`)
       const d = new Date().toISOString().slice(0,10)
