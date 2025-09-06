@@ -1,4 +1,5 @@
 export const apiBase = (import.meta as any).env.VITE_API_BASE || 'http://localhost:9004'
+export const inferenceBase = (import.meta as any).env.VITE_INFER_BASE || 'http://localhost:9003'
 
 export async function startDemo() {
   try {
@@ -10,7 +11,7 @@ export async function startDemo() {
 
 export async function setThreshold(value: number) {
   try {
-    const res = await fetch('http://localhost:9003/config', {
+    const res = await fetch(`${inferenceBase}/config`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ conf_threshold: value })

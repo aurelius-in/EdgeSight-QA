@@ -5,6 +5,7 @@ from typing import Dict, Any, List
 
 import numpy as np
 from fastapi import FastAPI, File, UploadFile, Form, Body
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 import uvicorn
@@ -13,6 +14,14 @@ from .infer import InferenceEngine
 
 
 app = FastAPI(title="EdgeSight QA - Inference")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 infer_ms = Histogram("model_infer_ms", "Model inference time (ms)", buckets=(1,5,10,20,50,100,200,500))
 num_detections = Histogram("n_detections", "Number of detections per frame", buckets=(0,1,2,3,5,10))

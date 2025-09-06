@@ -7,6 +7,7 @@ export default function App() {
   const [events, setEvents] = useState<EventMsg[]>([])
   const [threshold, setThreshold] = useState<number>(0.5)
   const evtSourceRef = useRef<EventSource | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
     const url = `${apiBase}/events`
@@ -43,6 +44,10 @@ export default function App() {
         </label>
       </div>
       <h3>Recent Events</h3>
+      <canvas ref={canvasRef} width={640} height={360} style={{ border: '1px solid #ccc' }} />
+      {events[0] && (
+        <DrawBoxes canvasRef={canvasRef} detections={events[0].detections} />
+      )}
       <ul>
         {events.map((ev, idx) => (
           <li key={idx}>{ev.ts} - {ev.frame_id} - dets: {ev.detections?.length ?? 0}</li>
@@ -50,6 +55,22 @@ export default function App() {
       </ul>
     </div>
   )
+}
+
+function DrawBoxes({ canvasRef, detections }: { canvasRef: React.RefObject<HTMLCanvasElement>, detections: any[] }) {
+  React.useEffect(() => {
+    const c = canvasRef.current
+    if (!c) return
+    const ctx = c.getContext('2d')!
+    ctx.clearRect(0, 0, c.width, c.height)
+    ctx.strokeStyle = 'red'
+    ctx.lineWidth = 2
+    detections?.forEach((d: any) => {
+      const [x, y, w, h] = d.bbox || [0, 0, 0, 0]
+      ctx.strokeRect(x, y, w, h)
+    })
+  }, [canvasRef, detections])
+  return null
 }
 
 

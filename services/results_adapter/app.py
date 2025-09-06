@@ -7,6 +7,7 @@ from typing import Dict, Any
 
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 from prometheus_client import Counter, CONTENT_TYPE_LATEST, generate_latest
 
@@ -17,6 +18,14 @@ from .governance import GovernanceLogger
 
 
 app = FastAPI(title="EdgeSight QA - Results Adapter")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 results_received = Counter("results_received_total", "Results received from inference")
 mqtt_published = Counter("mqtt_published_total", "MQTT messages published")
