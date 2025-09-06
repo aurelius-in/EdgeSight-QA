@@ -121,11 +121,11 @@ export default function App() {
         <Status label="Adapter" up={adapterUp} />
         <span style={{ marginLeft: 8 }}>FPS: {captureFps.toFixed(1)} | Drops: {captureDrops}</span>
       </div>
-      <div className="panel glow" style={{ display: 'flex', gap: 16, padding: 12 }}>
-        <button onClick={() => startDemo()}>Start</button>
+      <div className="panel glow" style={{ display: 'flex', gap: 16, padding: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button className="btn btn-primary" onClick={() => startDemo()}>Start</button>
         <span>p95: {latencyP95.toFixed(1)} ms • Pre: {avgPreMs.toFixed(2)} ms • Infer: {avgInferMs.toFixed(2)} ms</span>
         <span>Results: {resultsCount} | MQTT: {mqttCount} | OPC UA: {opcuaCount}</span>
-        <label>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           Threshold: {threshold.toFixed(2)}
           <input
             type="range"
@@ -140,7 +140,7 @@ export default function App() {
             }}
           />
         </label>
-        <label>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           OPC UA
           <input
             type="checkbox"
@@ -151,7 +151,7 @@ export default function App() {
             }}
           />
         </label>
-        <label>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           Offline Mode (synthetic data)
           <input
             type="checkbox"
@@ -264,12 +264,9 @@ function filterDetections(dets: any[], filter: string): any[] {
 }
 
 function Status({ label, up }: { label: string, up: boolean }) {
-  const color = up ? '#2e7d32' : '#c62828'
-  const bg = up ? '#e8f5e9' : '#ffebee'
-  const border = up ? '#c8e6c9' : '#ffcdd2'
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 6px', background: bg, color, border: `1px solid ${border}`, borderRadius: 4 }}>
-      <span style={{ width: 8, height: 8, borderRadius: 999, background: color }} />
+    <span className={`chip ${up ? 'up' : 'down'}`}>
+      <span className={`dot ${up ? 'up' : 'down'}`} />
       {label}
     </span>
   )
