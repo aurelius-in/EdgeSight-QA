@@ -8,19 +8,29 @@ import uvicorn
 import requests
 import cv2
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import Counter, Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from fastapi.responses import Response
 
-from .camera import CameraConfig, read_frames
+from camera import CameraConfig, read_frames
 
 
 app = FastAPI(title="EdgeSight QA - Capture")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 frames_sent = Counter("capture_frames_sent_total", "Total frames sent to preprocess")
 frames_dropped = Counter("capture_frames_dropped_total", "Total frames dropped due to buffer limits or errors")
 latency_est_ms = Histogram("capture_latency_est_ms", "Estimated capture-to-send latency (ms)", buckets=(1,5,10,20,50,100,200,500))
 running_gauge = Gauge("capture_running", "1 if capture loop is running, else 0")
+fps_gauge = Gauge("capture_fps", "Approximate frames per second captured")
 send_failures = Counter("capture_send_failures_total", "Failed HTTP sends to preprocess")
 
 
@@ -58,6 +68,8 @@ def _capture_loop():
     preprocess_url = os.getenv("PREPROCESS_URL", "http://preprocess:9002/frame")
     backoff = 0.2
     try:
+        frame_counter = 0
+        window_start = time.time()
         for frame_id, ts_ns, frame in read_frames(cfg):
             if _stop_flag.is_set():
                 break
@@ -66,6 +78,11 @@ def _capture_loop():
                 frames_dropped.inc()
                 continue
             _buffer.append((frame_id, ts_ns, jpg.tobytes()))
+            frame_counter += 1
+            if time.time() - window_start >= 1.0:
+                fps_gauge.set(frame_counter)
+                frame_counter = 0
+                window_start = time.time()
 
             # send preview opportunistically
             try:

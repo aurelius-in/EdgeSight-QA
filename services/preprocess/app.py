@@ -6,7 +6,7 @@ from typing import Dict, Any
 import uvicorn
 import numpy as np
 import cv2
-import requests
+import httpx
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import Response
 from prometheus_client import Counter, Gauge, Histogram, CONTENT_TYPE_LATEST, generate_latest
@@ -39,11 +39,11 @@ def metrics():
 
 
 @app.post("/frame")
-def frame(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), image: UploadFile = File(...)) -> Dict[str, Any]:
+async def frame(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), image: UploadFile = File(...)) -> Dict[str, Any]:
     preprocess_counter.inc()
     queue_depth.inc()
     try:
-        image_bytes = image.file.read()
+        image_bytes = await image.read()
         np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
         bgr = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         if bgr is None:
@@ -64,9 +64,10 @@ def frame(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), image: Up
             "dtype": ("dtype.txt", str(tensor.dtype).encode(), "text/plain"),
         }
         try:
-            resp = requests.post(infer_url, data=payload, files=files, timeout=5)
-            resp.raise_for_status()
-            result = resp.json()
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(infer_url, data=payload, files=files, timeout=5)
+                resp.raise_for_status()
+                result = resp.json()
             # Forward to results adapter
             results_url = os.getenv("RESULTS_URL", "http://results_adapter:9004/result")
             out = {
@@ -78,7 +79,8 @@ def frame(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), image: Up
                 "latency_ms": (time.perf_counter() - t0) * 1000.0,
             }
             try:
-                requests.post(results_url, json=out, timeout=3)
+                async with httpx.AsyncClient() as client:
+                    await client.post(results_url, json=out, timeout=3)
             except Exception:
                 pass
             return result

@@ -13,18 +13,27 @@ export default function App() {
   const [mqttCount, setMqttCount] = useState<number>(0)
   const [adapterUp, setAdapterUp] = useState<boolean>(false)
   const [demoForce, setDemo] = useState<boolean>(true)
+  const [opcuaCount, setOpcuaCount] = useState<number>(0)
   const evtSourceRef = useRef<EventSource | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [frameUrl, setFrameUrl] = useState<string>('')
 
   useEffect(() => {
     const url = `${apiBase}/events`
-    const es = new EventSource(url)
+    let es = new EventSource(url)
+    let retryMs = 1000
     es.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data)
         setEvents((prev) => [data, ...prev].slice(0, 50))
       } catch {}
+    }
+    es.onerror = () => {
+      es.close()
+      setTimeout(() => {
+        es = new EventSource(url)
+      }, retryMs)
+      retryMs = Math.min(retryMs * 2, 15000)
     }
     evtSourceRef.current = es
     return () => es.close()
@@ -45,19 +54,22 @@ export default function App() {
         if (m) setResultsCount(parseFloat(m[1]))
         const m2 = /mqtt_published_total\s+(\d+(?:\.\d+)?)/.exec(txt)
         if (m2) setMqttCount(parseFloat(m2[1]))
+        const m3 = /opcua_published_total\s+(\d+(?:\.\d+)?)/.exec(txt)
+        if (m3) setOpcuaCount(parseFloat(m3[1]))
       }).catch(()=>{})
     }, 1000)
     return () => clearInterval(id)
   }, [])
 
   return (
+    <>
     <div style={{ fontFamily: 'sans-serif', padding: 16 }}>
       <h2>EdgeSight QA - Operator</h2>
       <div style={{ display: 'flex', gap: 16 }}>
         <button onClick={() => startDemo()}>Start Demo</button>
         <span>p95: {latencyP95.toFixed(1)} ms</span>
         <span>Adapter: {adapterUp ? 'up' : 'down'}</span>
-        <span>Results: {resultsCount} | MQTT: {mqttCount}</span>
+        <span>Results: {resultsCount} | MQTT: {mqttCount} | OPC UA: {opcuaCount}</span>
         <label>
           Threshold: {threshold.toFixed(2)}
           <input
@@ -121,6 +133,7 @@ export default function App() {
         <button onClick={() => setErrorMsg('')} style={{ marginLeft: 8 }}>x</button>
       </div>
     )}
+    </>
   )
 }
 

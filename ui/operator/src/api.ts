@@ -1,5 +1,5 @@
-export const apiBase = (import.meta as any).env.VITE_API_BASE || 'http://localhost:9004'
-export const inferenceBase = (import.meta as any).env.VITE_INFER_BASE || 'http://localhost:9003'
+export const apiBase = (import.meta as any).env.VITE_RESULTS_ADAPTER_API_BASE || (import.meta as any).env.VITE_API_BASE || 'http://localhost:9004'
+export const inferenceBase = (import.meta as any).env.VITE_INFERENCE_API_BASE || (import.meta as any).env.VITE_INFER_BASE || 'http://localhost:9003'
 
 export async function startDemo() {
   try {

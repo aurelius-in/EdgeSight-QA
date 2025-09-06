@@ -10,7 +10,7 @@ from fastapi.responses import Response
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 import uvicorn
 
-from .infer import InferenceEngine
+from infer import InferenceEngine
 
 
 app = FastAPI(title="EdgeSight QA - Inference")
@@ -39,7 +39,8 @@ def healthz():
 
 @app.get("/readyz")
 def readyz():
-    return ({"status": "ready"} if _ready else Response(status_code=503))
+    ok = engine.ready
+    return ({"status": "ready"} if ok else Response(status_code=503))
 
 
 @app.get("/metrics")
@@ -50,8 +51,11 @@ def metrics():
 @app.post("/infer")
 def infer(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), tensor: UploadFile = File(...), shape: UploadFile = File(...), dtype: UploadFile = File(...)) -> Dict[str, Any]:
     tensor_bytes = tensor.file.read()
-    shape_list = eval(shape.file.read().decode())
-    dtype_str = dtype.file.read().decode()
+    shape_str = shape.file.read().decode().strip()
+    # safe parse for shape like "[3, 360, 640]" or "(3,360,640)"
+    clean = shape_str.strip().lstrip('([').rstrip(')]')
+    shape_list = [int(x.strip()) for x in clean.split(',') if x.strip()]
+    dtype_str = dtype.file.read().decode().strip()
     arr = np.frombuffer(tensor_bytes, dtype=np.dtype(dtype_str)).reshape(shape_list)
     t0 = time.perf_counter()
     detections = engine.run(arr)
