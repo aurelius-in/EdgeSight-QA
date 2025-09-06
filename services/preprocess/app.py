@@ -11,7 +11,7 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import Response
 from prometheus_client import Counter, Gauge, Histogram, CONTENT_TYPE_LATEST, generate_latest
 
-from .ops import run_pipeline
+from ops import run_pipeline
 
 
 app = FastAPI(title="EdgeSight QA - Preprocess")
@@ -66,7 +66,21 @@ def frame(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), image: Up
         try:
             resp = requests.post(infer_url, data=payload, files=files, timeout=5)
             resp.raise_for_status()
-            return resp.json()
+            result = resp.json()
+            # Forward to results adapter
+            results_url = os.getenv("RESULTS_URL", "http://results_adapter:9004/result")
+            out = {
+                "frame_id": result.get("frame_id", frame_id),
+                "detections": result.get("detections", []),
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "model_hash": os.getenv("MODEL_HASH", "demo"),
+                "config_digest": os.getenv("CONFIG_DIGEST", "demo"),
+            }
+            try:
+                requests.post(results_url, json=out, timeout=3)
+            except Exception:
+                pass
+            return result
         except Exception:
             return {"frame_id": frame_id, "forwarded": False}
     finally:
