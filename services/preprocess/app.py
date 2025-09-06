@@ -70,6 +70,17 @@ def metrics():
 
 @app.post("/frame")
 async def frame(request: Request, frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), image: UploadFile = File(...), corr_id: str | None = Form(None)) -> Dict[str, Any]:
+    # Span attributes for correlation
+    try:
+        from opentelemetry import trace as _trace
+        span = _trace.get_current_span()
+        span.set_attribute("frame_id", frame_id)
+        span.set_attribute("ts_monotonic_ns", int(ts_monotonic_ns))
+        cid_hdr = corr_id or request.headers.get("X-Correlation-ID")
+        if cid_hdr:
+            span.set_attribute("corr_id", cid_hdr)
+    except Exception:
+        pass
     preprocess_counter.inc()
     queue_depth.inc()
     try:

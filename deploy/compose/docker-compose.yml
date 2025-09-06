@@ -6,6 +6,13 @@ services:
       - "1883:1883"
     volumes:
       - ./mosquitto/config:/mosquitto/config:ro
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otelcol-config.yaml:ro
+    command: ["--config", "/etc/otelcol-config.yaml"]
+    ports:
+      - "4317:4317"
   capture:
     build: ../../services/capture
     environment:
@@ -15,6 +22,10 @@ services:
       - FRAME_WIDTH=640
       - FRAME_HEIGHT=360
       - CAPTURE_AUTOSTART=${CAPTURE_AUTOSTART:-true}
+      - OTEL_ENABLED=1
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_INSECURE=1
+      - OTEL_SERVICE_NAME=capture
     ports: ["9001:9001"]
     depends_on:
       - preprocess
@@ -31,6 +42,10 @@ services:
       - INFERENCE_URL=http://inference:9003/infer
       - FRAME_WIDTH=640
       - FRAME_HEIGHT=360
+      - OTEL_ENABLED=1
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_INSECURE=1
+      - OTEL_SERVICE_NAME=preprocess
     ports: ["9002:9002"]
     depends_on:
       - inference
@@ -45,6 +60,10 @@ services:
       - MODEL_PATH=/app/assets/yolov8n.onnx
       - CONF_THRESHOLD=${CONF_THRESHOLD:-0.5}
       - OFFLINE_FORCE=${OFFLINE_FORCE:-1}
+      - OTEL_ENABLED=1
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_INSECURE=1
+      - OTEL_SERVICE_NAME=inference
     ports: ["9003:9003"]
     volumes:
       - ../../assets:/app/assets:ro
@@ -59,6 +78,10 @@ services:
       - MQTT_BROKER=mosquitto
       - MQTT_PORT=1883
       - CONF_THRESHOLD=${CONF_THRESHOLD:-0.5}
+      - OTEL_ENABLED=1
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_INSECURE=1
+      - OTEL_SERVICE_NAME=results-adapter
     ports: ["9004:9004"]
     depends_on:
       - mosquitto
