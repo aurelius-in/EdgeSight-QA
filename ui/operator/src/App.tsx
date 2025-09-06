@@ -109,7 +109,7 @@ export default function App() {
     <>
     <div style={{ fontFamily: 'sans-serif', padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-        <img src="/media/esqa/esqa-poster.png" alt="EdgeSight QA" width={56} height={56} style={{ borderRadius: 8 }} />
+        <img src={(import.meta as any).env.BASE_URL + 'media/esqa/esqa-poster.png'} alt="EdgeSight QA" width={56} height={56} style={{ borderRadius: 8 }} />
         <h2 className="neon logo-gradient" style={{ margin: 0 }}>EDGESIGHT QA</h2>
       </div>
       {!sseConnected && (
