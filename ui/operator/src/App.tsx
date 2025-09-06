@@ -93,9 +93,13 @@ function DrawBoxes({ canvasRef, detections }: { canvasRef: React.RefObject<HTMLC
     ctx.clearRect(0, 0, c.width, c.height)
     ctx.strokeStyle = 'red'
     ctx.lineWidth = 2
+    ctx.fillStyle = 'rgba(255,0,0,0.8)'
+    ctx.font = '12px sans-serif'
     detections?.forEach((d: any) => {
       const [x, y, w, h] = d.bbox || [0, 0, 0, 0]
       ctx.strokeRect(x, y, w, h)
+      const label = `${d.class_id ?? 'cls'}:${(d.score ?? 0).toFixed(2)}`
+      ctx.fillText(label, x + 2, Math.max(10, y - 4))
     })
   }, [canvasRef, detections])
   return null
