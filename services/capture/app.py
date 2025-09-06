@@ -57,22 +57,42 @@ def metrics():
 
 def _capture_loop():
     global _ready
-    running_gauge.set(1)
-    _ready = True
-    cfg = CameraConfig(
-        source=os.getenv("CAMERA_URL", "file:/app/assets/sample.mp4"),
-        fps_cap=float(os.getenv("FRAME_RATE_CAP", "10")),
-        width=int(os.getenv("FRAME_WIDTH", "640")),
-        height=int(os.getenv("FRAME_HEIGHT", "360")),
-    )
-    preprocess_url = os.getenv("PREPROCESS_URL", "http://preprocess:9002/frame")
-    backoff = 0.2
     try:
+        print("[capture] starting capture loop", flush=True)
+        running_gauge.set(1)
+        _ready = True
+        cfg = CameraConfig(
+            source=os.getenv("CAMERA_URL", "synthetic"),
+            fps_cap=float(os.getenv("FRAME_RATE_CAP", "10")),
+            width=int(os.getenv("FRAME_WIDTH", "640")),
+            height=int(os.getenv("FRAME_HEIGHT", "360")),
+        )
+        print(f"[capture] source={cfg.source} fps_cap={cfg.fps_cap} size={cfg.width}x{cfg.height}", flush=True)
+        preprocess_url = os.getenv("PREPROCESS_URL", "http://preprocess:9002/frame")
+        backoff = 0.2
         frame_counter = 0
         window_start = time.time()
-        for frame_id, ts_ns, frame in read_frames(cfg):
-            if _stop_flag.is_set():
-                break
+        frame_gen = None
+        while not _stop_flag.is_set():
+            if frame_gen is None:
+                try:
+                    frame_gen = read_frames(cfg)
+                    print("[capture] frame generator (re)initialized", flush=True)
+                except Exception as e:
+                    print(f"[capture] failed to init frame generator: {e}", flush=True)
+                    time.sleep(0.5)
+                    continue
+            try:
+                frame_id, ts_ns, frame = next(frame_gen)
+            except StopIteration:
+                frame_gen = None
+                continue
+            except Exception as e:
+                print(f"[capture] frame read error: {e}", flush=True)
+                frame_gen = None
+                time.sleep(0.1)
+                continue
+            # got a frame
             ok, jpg = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
             if not ok:
                 frames_dropped.inc()
@@ -108,13 +128,17 @@ def _capture_loop():
                     latency_est_ms.observe((time.perf_counter() - t0) * 1000.0)
                     _buffer.popleft()
                     backoff = 0.2
-                except Exception:
+                except Exception as e:
                     send_failures.inc()
+                    print(f"[capture] send error: {e}", flush=True)
                     # backoff and keep buffer (drop oldest if full handled by deque maxlen)
                     time.sleep(backoff)
                     backoff = min(backoff * 2, 2.0)
                     break
+    except Exception as e:
+        print(f"[capture] loop crashed: {e}", flush=True)
     finally:
+        print("[capture] capture loop exiting", flush=True)
         running_gauge.set(0)
         _ready = False
 
@@ -127,7 +151,8 @@ def start():
     _stop_flag.clear()
     _capture_thread = threading.Thread(target=_capture_loop, daemon=True)
     _capture_thread.start()
-    return {"status": "started"}
+    time.sleep(0.1)
+    return {"status": "started", "alive": _capture_thread.is_alive()}
 
 
 @app.post("/stop")

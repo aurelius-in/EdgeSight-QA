@@ -5,4 +5,5 @@ numpy==1.26.4
 # onnxruntime-gpu can be large; allowed to be installed externally in GPU images
 # onnxruntime-gpu
 requests==2.32.3
+python-multipart==0.0.9
 

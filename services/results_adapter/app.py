@@ -9,7 +9,7 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
-from prometheus_client import Counter, CONTENT_TYPE_LATEST, generate_latest
+from prometheus_client import Counter, Histogram, CONTENT_TYPE_LATEST, generate_latest
 
 from sink_mqtt import publish_mqtt
 from sink_opcua import write_defect_tag
@@ -32,6 +32,7 @@ mqtt_published = Counter("mqtt_published_total", "MQTT messages published")
 opcua_published = Counter("opcua_published_total", "OPC UA writes attempted")
 webhook_sent = Counter("webhook_sent_total", "Webhook posts sent")
 governance_signed = Counter("governance_signed_total", "Governance records signed")
+e2e_latency_ms = Histogram("e2e_latency_ms", "Approx end-to-end pipeline latency (ms)", buckets=(1,5,10,20,50,100,200,500,1000))
 
 gov = GovernanceLogger(base_dir=Path(os.getenv("GOVERNANCE_DIR", "/app/data/governance")))
 
@@ -89,6 +90,11 @@ async def result(request: Request):
         "threshold": threshold,
         "latency_ms": payload.get("latency_ms"),
     }
+    try:
+        if isinstance(record.get("latency_ms"), (int, float)):
+            e2e_latency_ms.observe(float(record["latency_ms"]))
+    except Exception:
+        pass
     gov.append_signed(record)
     governance_signed.inc()
 
