@@ -7,6 +7,7 @@ from typing import Optional, Deque, Tuple
 import uvicorn
 import requests
 import cv2
+import uuid
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import Counter, Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST
@@ -133,7 +134,7 @@ def _capture_loop():
             # send preview opportunistically
             try:
                 preview_url = os.getenv("PREVIEW_URL", "http://results_adapter:9004/frame_preview")
-                requests.post(preview_url, data=_buffer[-1][2], timeout=0.2)
+                requests.post(preview_url, data=_buffer[-1][2], headers={"X-Correlation-ID": f"f{frame_id}"}, timeout=0.2)
             except Exception:
                 pass
 
@@ -142,10 +143,12 @@ def _capture_loop():
                 fid, ts, payload = _buffer[0]
                 t0 = time.perf_counter()
                 try:
+                    corr_id = str(uuid.uuid4())
                     resp = requests.post(
                         preprocess_url,
-                        data={"frame_id": str(fid), "ts_monotonic_ns": str(ts)},
+                        data={"frame_id": str(fid), "ts_monotonic_ns": str(ts), "corr_id": corr_id},
                         files={"image": (f"{fid}.jpg", payload, "image/jpeg")},
+                        headers={"X-Correlation-ID": corr_id},
                         timeout=1.5,
                     )
                     if resp.status_code >= 400:

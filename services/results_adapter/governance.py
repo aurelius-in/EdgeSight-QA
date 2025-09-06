@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, List
 
@@ -42,6 +42,24 @@ class GovernanceLogger:
         p = self._log_path(datetime.utcnow())
         with p.open("a", encoding="utf-8") as f:
             f.write(json.dumps(wrapped) + "\n")
+
+    def enforce_retention(self, days: int = 30) -> int:
+        cutoff = datetime.utcnow().date() - timedelta(days=days)
+        removed = 0
+        for day_dir in self.base_dir.glob("*"):
+            try:
+                d = datetime.strptime(day_dir.name, "%Y-%m-%d").date()
+            except ValueError:
+                continue
+            if d < cutoff:
+                try:
+                    for fp in day_dir.glob("*"):
+                        fp.unlink(missing_ok=True)  # type: ignore[arg-type]
+                    day_dir.rmdir()
+                    removed += 1
+                except Exception:
+                    pass
+        return removed
 
     def verify_record(self, wrapped: Dict[str, Any]) -> bool:
         try:
