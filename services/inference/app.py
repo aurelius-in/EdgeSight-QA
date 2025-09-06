@@ -68,20 +68,20 @@ def infer(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), tensor: U
 @app.patch("/config")
 def patch_config(cfg: Dict[str, Any] = Body(...)):
     threshold = cfg.get("conf_threshold")
-    demo_force = cfg.get("demo_force")
+    offline_force = cfg.get("offline_force") or cfg.get("demo_force")
     updated = {}
     if threshold is not None:
         engine.set_threshold(float(threshold))
         updated["conf_threshold"] = engine.conf_threshold
-    if demo_force is not None:
-        engine.set_demo_force(bool(demo_force))
-        updated["demo_force"] = engine.demo_force
+    if offline_force is not None:
+        engine.set_offline_force(bool(offline_force))
+        updated["offline_force"] = engine.offline_force
     return {"updated": updated}
 
 
 @app.get("/config")
 def get_config():
-    return {"conf_threshold": engine.conf_threshold, "demo_force": engine.demo_force, "gpu_in_use": bool(engine.gpu_in_use)}
+    return {"conf_threshold": engine.conf_threshold, "offline_force": engine.offline_force, "gpu_in_use": bool(engine.gpu_in_use)}
 
 
 if __name__ == "__main__":

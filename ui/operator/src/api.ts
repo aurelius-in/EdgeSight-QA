@@ -42,11 +42,11 @@ export async function setDemoForce(enabled: boolean) {
     const res = await fetch(`${inferenceBase}/config`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ demo_force: enabled })
+      body: JSON.stringify({ offline_force: enabled })
     })
     return await res.json()
   } catch (e) {
-    console.warn('Failed to set demo_force', e)
+    console.warn('Failed to set offline_force', e)
     return null
   }
 }
