@@ -20,12 +20,20 @@ export default function App() {
 
   useEffect(() => {
     const url = `${apiBase}/events`
-    const es = new EventSource(url)
+    let es = new EventSource(url)
+    let retryMs = 1000
     es.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data)
         setEvents((prev) => [data, ...prev].slice(0, 50))
       } catch {}
+    }
+    es.onerror = () => {
+      es.close()
+      setTimeout(() => {
+        es = new EventSource(url)
+      }, retryMs)
+      retryMs = Math.min(retryMs * 2, 15000)
     }
     evtSourceRef.current = es
     return () => es.close()

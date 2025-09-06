@@ -39,7 +39,8 @@ def healthz():
 
 @app.get("/readyz")
 def readyz():
-    return ({"status": "ready"} if _ready else Response(status_code=503))
+    ok = engine.ready
+    return ({"status": "ready"} if ok else Response(status_code=503))
 
 
 @app.get("/metrics")

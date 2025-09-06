@@ -89,7 +89,16 @@ async def result(request: Request):
     gov.append_signed(record)
     governance_signed.inc()
 
-    event = json.dumps({"ts": ts, "frame_id": record["frame_id"], "detections": detections})
+    event = json.dumps({
+        "ts": ts,
+        "frame_id": record["frame_id"],
+        "detections": detections
+    })
+    # structured log to stdout
+    try:
+        print(json.dumps({"event": "result", "frame_id": record["frame_id"], "ts": ts, "num_detections": len(detections)}), flush=True)
+    except Exception:
+        pass
     for queue in subscribers:
         queue.append(event)
     return {"status": "ok"}
@@ -102,12 +111,17 @@ async def events():
 
     async def event_stream():
         try:
+            last_ping = time.time()
             while True:
                 if queue:
                     msg = queue.pop(0)
                     yield f"data: {msg}\n\n"
-                else:
-                    await asyncio.sleep(0.2)
+                # heartbeat every 10s
+                now = time.time()
+                if now - last_ping > 10:
+                    yield ": keep-alive\n\n"
+                    last_ping = now
+                await asyncio.sleep(0.2)
         except Exception:
             pass
         finally:
