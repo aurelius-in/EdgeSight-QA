@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capture
+  namespace: edgesight
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: capture }
+  template:
+    metadata:
+      labels: { app: capture }
+    spec:
+      containers:
+        - name: capture
+          image: ghcr.io/your-org/edgesight-capture:latest
+          ports:
+            - containerPort: 9001
+          env:
+            - name: PREPROCESS_URL
+              value: http://preprocess:9002/frame
+          livenessProbe:
+            httpGet: { path: /healthz, port: 9001 }
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet: { path: /readyz, port: 9001 }
+            initialDelaySeconds: 5
+
+

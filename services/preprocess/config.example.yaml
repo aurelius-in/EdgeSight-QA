@@ -1,0 +1,11 @@
+pipeline:
+  - op: resize
+    width: 640
+    height: 360
+  - op: to_rgb
+  - op: normalize
+    mean: [0.485, 0.456, 0.406]
+    std:  [0.229, 0.224, 0.225]
+inference_url: http://inference:9003/infer
+
+

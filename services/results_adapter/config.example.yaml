@@ -1,0 +1,10 @@
+mqtt:
+  broker: mosquitto
+  port: 1883
+opcua:
+  enabled: false
+webhook:
+  url: ""
+governance_dir: /app/data/governance
+
+

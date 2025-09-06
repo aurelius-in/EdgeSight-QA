@@ -1,0 +1,13 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: results-adapter
+  namespace: edgesight
+spec:
+  to:
+    kind: Service
+    name: results-adapter
+  port:
+    targetPort: 9004
+
+

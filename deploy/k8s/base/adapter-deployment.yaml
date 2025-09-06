@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: results-adapter
+  namespace: edgesight
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: results-adapter }
+  template:
+    metadata:
+      labels: { app: results-adapter }
+    spec:
+      containers:
+        - name: results-adapter
+          image: ghcr.io/your-org/edgesight-adapter:latest
+          ports:
+            - containerPort: 9004
+          env:
+            - name: MQTT_BROKER
+              value: mosquitto
+            - name: MQTT_PORT
+              value: "1883"
+          livenessProbe:
+            httpGet: { path: /healthz, port: 9004 }
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet: { path: /readyz, port: 9004 }
+            initialDelaySeconds: 5
+
+

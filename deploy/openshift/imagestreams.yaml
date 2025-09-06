@@ -1,0 +1,25 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: edgesight-capture
+  namespace: edgesight
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: edgesight-preprocess
+  namespace: edgesight
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: edgesight-inference
+  namespace: edgesight
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: edgesight-adapter
+  namespace: edgesight
+
+
