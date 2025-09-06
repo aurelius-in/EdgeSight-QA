@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { apiBase, startDemo, setThreshold as updateThreshold } from './api'
+import { apiBase, startDemo, setThreshold as updateThreshold, setOpcuaEnabled } from './api'
 
 type EventMsg = { ts: string; frame_id: string; detections: any[] }
 
 export default function App() {
   const [events, setEvents] = useState<EventMsg[]>([])
   const [threshold, setThreshold] = useState<number>(0.5)
+  const [opcuaEnabled, setOpcua] = useState<boolean>(false)
   const evtSourceRef = useRef<EventSource | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [frameUrl, setFrameUrl] = useState<string>('')
@@ -50,6 +51,17 @@ export default function App() {
             }}
           />
         </label>
+        <label>
+          OPC UA
+          <input
+            type="checkbox"
+            checked={opcuaEnabled}
+            onChange={(e) => {
+              setOpcua(e.target.checked)
+              setOpcuaEnabled(e.target.checked)
+            }}
+          />
+        </label>
       </div>
       <h3>Recent Events</h3>
       <div style={{ position: 'relative', width: 640, height: 360 }}>
@@ -61,7 +73,12 @@ export default function App() {
       )}
       <ul>
         {events.map((ev, idx) => (
-          <li key={idx}>{ev.ts} - {ev.frame_id} - dets: {ev.detections?.length ?? 0}</li>
+          <li key={idx}>
+            {ev.ts} - {ev.frame_id} - dets: {ev.detections?.length ?? 0}
+            {ev.detections?.map((d: any, j: number) => (
+              <span key={j}> [{d.class_id ?? 'cls'}:{(d.score ?? 0).toFixed(2)}]</span>
+            ))}
+          </li>
         ))}
       </ul>
     </div>

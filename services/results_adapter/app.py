@@ -40,6 +40,7 @@ import asyncio
 from PIL import Image
 import io
 
+OPCUA_ENABLED = os.getenv("OPCUA_ENABLED", "false").lower() in ("1", "true", "yes")
 
 @app.get("/healthz")
 def healthz():
@@ -70,8 +71,9 @@ async def result(request: Request):
         topic = f"edgesight/line/{line_id}/defect"
         if publish_mqtt(topic, json.dumps(payload).encode()):
             mqtt_published.inc()
-        if write_defect_tag(line_id, payload):
-            opcua_published.inc()
+        if OPCUA_ENABLED:
+            if write_defect_tag(line_id, payload):
+                opcua_published.inc()
         if send_webhook(os.getenv("WEBHOOK_URL", ""), payload):
             webhook_sent.inc()
 
@@ -82,6 +84,7 @@ async def result(request: Request):
         "model_hash": payload.get("model_hash", "unknown"),
         "config_digest": payload.get("config_digest", "unknown"),
         "threshold": threshold,
+        "latency_ms": payload.get("latency_ms"),
     }
     gov.append_signed(record)
     governance_signed.inc()
@@ -138,5 +141,20 @@ if __name__ == "__main__":
 @app.get("/governance/summary")
 def governance_summary(date_from: str, date_to: str):
     return gov.summarize(date_from, date_to)
+
+
+@app.get("/config")
+def get_config():
+    return {"opcua_enabled": OPCUA_ENABLED}
+
+
+@app.patch("/config")
+async def patch_config(body: Dict[str, Any]):
+    global OPCUA_ENABLED
+    changed = {}
+    if "opcua_enabled" in body:
+        OPCUA_ENABLED = bool(body["opcua_enabled"])
+        changed["opcua_enabled"] = OPCUA_ENABLED
+    return {"updated": changed}
 
 

@@ -23,4 +23,18 @@ export async function setThreshold(value: number) {
   }
 }
 
+export async function setOpcuaEnabled(enabled: boolean) {
+  try {
+    const res = await fetch(`${apiBase}/config`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ opcua_enabled: enabled })
+    })
+    return await res.json()
+  } catch (e) {
+    console.warn('Failed to set OPC UA', e)
+    return null
+  }
+}
+
 

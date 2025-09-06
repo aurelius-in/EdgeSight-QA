@@ -75,6 +75,7 @@ def frame(frame_id: str = Form(...), ts_monotonic_ns: int = Form(...), image: Up
                 "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "model_hash": os.getenv("MODEL_HASH", "demo"),
                 "config_digest": os.getenv("CONFIG_DIGEST", "demo"),
+                "latency_ms": (time.perf_counter() - t0) * 1000.0,
             }
             try:
                 requests.post(results_url, json=out, timeout=3)
