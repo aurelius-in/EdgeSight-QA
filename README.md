@@ -315,6 +315,14 @@ Env vars (services): `OTEL_ENABLED=1`, `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-
 
 To see exemplars in Grafana, pair Prometheus with a traces backend (Grafana Tempo) and enable the OTEL→Tempo pipeline. Grafana can link metrics panels (e.g., e2e latency histograms) to spans when correlation IDs or trace IDs are present.
 
+### Traces (Tempo + Grafana)
+
+With docker-compose, a Tempo instance is included. Open Grafana (`http://localhost:3000`), then:
+
+- Use the “Explore” tab, Tempo datasource, and query `{service.name="results-adapter"}` to browse recent traces.
+- From the “EdgeSight QA” dashboard, click a point on the “E2E Latency p95/p99” graph; exemplars should pop and link to a trace.
+- In the operator UI, each event includes a “View trace” link (when available) that opens the specific trace in Grafana Explore (Tempo datasource).
+
 ## Deployment
 
 ### Kubernetes / Helm
