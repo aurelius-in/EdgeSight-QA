@@ -34,6 +34,13 @@ export default function App() {
         .then(r => r.json())
         .then(j => setLatencyP95(j?.latency_p95_ms ?? 0))
         .catch(() => {})
+      fetch(`${apiBase}/config`).then(r=>r.json()).then(j=> setOpcua(!!j?.opcua_enabled)).catch(()=>{})
+      fetch(`${apiBase}/metrics`).then(r=>r.text()).then(txt => {
+        const m = /results_received_total\s+(\d+(?:\.\d+)?)/.exec(txt)
+        if (m) {
+          // Could display if needed
+        }
+      }).catch(()=>{})
     }, 1000)
     return () => clearInterval(id)
   }, [])
