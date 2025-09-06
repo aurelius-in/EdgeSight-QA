@@ -15,6 +15,12 @@ export default function App() {
   const [adapterUp, setAdapterUp] = useState<boolean>(false)
   const [offlineForce, setOffline] = useState<boolean>(true)
   const [opcuaCount, setOpcuaCount] = useState<number>(0)
+  const [sseConnected, setSseConnected] = useState<boolean>(false)
+  const [captureUp, setCaptureUp] = useState<boolean>(false)
+  const [preprocessUp, setPreprocessUp] = useState<boolean>(false)
+  const [inferenceUp, setInferenceUp] = useState<boolean>(false)
+  const [captureFps, setCaptureFps] = useState<number>(0)
+  const [captureDrops, setCaptureDrops] = useState<number>(0)
   const evtSourceRef = useRef<EventSource | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [frameUrl, setFrameUrl] = useState<string>('')
@@ -23,6 +29,7 @@ export default function App() {
     const url = `${apiBase}/events`
     let es = new EventSource(url)
     let retryMs = 1000
+    es.onopen = () => setSseConnected(true)
     es.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data)
@@ -31,6 +38,7 @@ export default function App() {
     }
     es.onerror = () => {
       es.close()
+      setSseConnected(false)
       setTimeout(() => {
         es = new EventSource(url)
       }, retryMs)
@@ -55,6 +63,9 @@ export default function App() {
         .catch(() => {})
       fetch(`${apiBase}/config`).then(r=>r.json()).then(j=> setOpcua(!!j?.opcua_enabled)).catch(()=>{})
       fetch(`${apiBase}/healthz`).then(r => setAdapterUp(r.ok)).catch(()=> setAdapterUp(false))
+      fetch('http://localhost:9001/healthz').then(r => setCaptureUp(r.ok)).catch(()=> setCaptureUp(false))
+      fetch('http://localhost:9002/healthz').then(r => setPreprocessUp(r.ok)).catch(()=> setPreprocessUp(false))
+      fetch(`${inferBase}/healthz`).then(r => setInferenceUp(r.ok)).catch(()=> setInferenceUp(false))
       fetch(`${apiBase}/metrics`).then(r=>r.text()).then(txt => {
         const m = /results_received_total\s+(\d+(?:\.\d+)?)/.exec(txt)
         if (m) setResultsCount(parseFloat(m[1]))
@@ -62,6 +73,12 @@ export default function App() {
         if (m2) setMqttCount(parseFloat(m2[1]))
         const m3 = /opcua_published_total\s+(\d+(?:\.\d+)?)/.exec(txt)
         if (m3) setOpcuaCount(parseFloat(m3[1]))
+      }).catch(()=>{})
+      fetch('http://localhost:9001/metrics').then(r=>r.text()).then(txt => {
+        const f = /capture_fps\s+(\d+(?:\.\d+)?)/.exec(txt)
+        if (f) setCaptureFps(parseFloat(f[1]))
+        const d = /capture_frames_dropped_total\s+(\d+(?:\.\d+)?)/.exec(txt)
+        if (d) setCaptureDrops(parseFloat(d[1]))
       }).catch(()=>{})
     }, 1000)
     return () => clearInterval(id)
@@ -71,10 +88,21 @@ export default function App() {
     <>
     <div style={{ fontFamily: 'sans-serif', padding: 16 }}>
       <h2>EdgeSight QA - Operator</h2>
+      {!sseConnected && (
+        <div style={{ background: '#fff3cd', color: '#7f6519', padding: 8, border: '1px solid #ffe69c', marginBottom: 12 }}>
+          Live feed disconnected. Retrying...
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+        <Status label="Capture" up={captureUp} />
+        <Status label="Preprocess" up={preprocessUp} />
+        <Status label="Inference" up={inferenceUp} />
+        <Status label="Adapter" up={adapterUp} />
+        <span style={{ marginLeft: 8 }}>FPS: {captureFps.toFixed(1)} | Drops: {captureDrops}</span>
+      </div>
       <div style={{ display: 'flex', gap: 16 }}>
-        <button onClick={() => startDemo()}>Start Demo</button>
+        <button onClick={() => startDemo()}>Start</button>
         <span>p95: {latencyP95.toFixed(1)} ms</span>
-        <span>Adapter: {adapterUp ? 'up' : 'down'}</span>
         <span>Results: {resultsCount} | MQTT: {mqttCount} | OPC UA: {opcuaCount}</span>
         <label>
           Threshold: {threshold.toFixed(2)}
@@ -170,6 +198,18 @@ function DrawBoxes({ canvasRef, detections }: { canvasRef: React.RefObject<HTMLC
     })
   }, [canvasRef, detections])
   return null
+}
+
+function Status({ label, up }: { label: string, up: boolean }) {
+  const color = up ? '#2e7d32' : '#c62828'
+  const bg = up ? '#e8f5e9' : '#ffebee'
+  const border = up ? '#c8e6c9' : '#ffcdd2'
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 6px', background: bg, color, border: `1px solid ${border}`, borderRadius: 4 }}>
+      <span style={{ width: 8, height: 8, borderRadius: 999, background: color }} />
+      {label}
+    </span>
+  )
 }
 
 
