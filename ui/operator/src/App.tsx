@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { apiBase, startDemo, setThreshold as updateThreshold, setOpcuaEnabled, setDemoForce } from './api'
+import { mockStream } from './mock'
 const inferBase = (import.meta as any).env.VITE_INFERENCE_API_BASE || 'http://localhost:9003'
 
 type EventMsg = { ts: string; frame_id: string; detections: any[]; corr_id?: string; trace_id?: string }
@@ -24,28 +25,54 @@ export default function App() {
   const evtSourceRef = useRef<EventSource | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [frameUrl, setFrameUrl] = useState<string>('')
+  const [classFilter, setClassFilter] = useState<string>('')
+  const [legend, setLegend] = useState<Record<string, string>>({})
+  const [avgPreMs, setAvgPreMs] = useState<number>(0)
+  const [avgInferMs, setAvgInferMs] = useState<number>(0)
 
   useEffect(() => {
     const url = `${apiBase}/events`
-    let es = new EventSource(url)
+    let es: EventSource | null = null
+    let useMock = false
+    try {
+      es = new EventSource(url)
+    } catch {
+      useMock = true
+    }
     let retryMs = 1000
-    es.onopen = () => setSseConnected(true)
-    es.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data)
-        setEvents((prev) => [data, ...prev].slice(0, 50))
-      } catch {}
+    if (es) {
+      es.onopen = () => setSseConnected(true)
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data)
+          setEvents((prev) => [data, ...prev].slice(0, 50))
+        } catch {}
+      }
+      es.onerror = () => {
+        es!.close()
+        setSseConnected(false)
+        setTimeout(() => {
+          try { es = new EventSource(url); evtSourceRef.current = es } catch { useMock = true }
+        }, retryMs)
+        retryMs = Math.min(retryMs * 2, 15000)
+      }
+      evtSourceRef.current = es
     }
-    es.onerror = () => {
-      es.close()
-      setSseConnected(false)
-      setTimeout(() => {
-        es = new EventSource(url)
-      }, retryMs)
-      retryMs = Math.min(retryMs * 2, 15000)
+
+    // Fallback mock stream when backend is unreachable
+    let mockTimer: number | undefined
+    if (!es) useMock = true
+    if (useMock) {
+      setSseConnected(true)
+      const gen = mockStream()
+      const tick = () => {
+        const next = gen.next().value
+        setEvents((prev) => [next, ...prev].slice(0, 50))
+        mockTimer = window.setTimeout(tick, 220)
+      }
+      tick()
     }
-    evtSourceRef.current = es
-    return () => es.close()
+    return () => { if (es) es.close(); if (mockTimer) clearTimeout(mockTimer) }
   }, [])
 
   useEffect(() => {
@@ -80,6 +107,23 @@ export default function App() {
         const d = /capture_frames_dropped_total\s+(\d+(?:\.\d+)?)/.exec(txt)
         if (d) setCaptureDrops(parseFloat(d[1]))
       }).catch(()=>{})
+      fetch('http://localhost:9002/metrics').then(r=>r.text()).then(txt => {
+        // Parse preprocess_time_ms histogram avg from sum/count
+        const sum = /preprocess_time_ms_sum\s+(\d+(?:\.\d+)?)/.exec(txt)
+        const count = /preprocess_time_ms_count\s+(\d+(?:\.\d+)?)/.exec(txt)
+        if (sum && count) {
+          const avg = parseFloat(sum[1]) / Math.max(1, parseFloat(count[1]))
+          setAvgPreMs(avg)
+        }
+      }).catch(()=>{})
+      fetch(`${inferBase}/metrics`).then(r=>r.text()).then(txt => {
+        const sum = /model_infer_ms_sum\s+(\d+(?:\.\d+)?)/.exec(txt)
+        const count = /model_infer_ms_count\s+(\d+(?:\.\d+)?)/.exec(txt)
+        if (sum && count) {
+          const avg = parseFloat(sum[1]) / Math.max(1, parseFloat(count[1]))
+          setAvgInferMs(avg)
+        }
+      }).catch(()=>{})
     }, 1000)
     return () => clearInterval(id)
   }, [])
@@ -87,7 +131,10 @@ export default function App() {
   return (
     <>
     <div style={{ fontFamily: 'sans-serif', padding: 16 }}>
-      <h2>EdgeSight QA - Operator</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+        <img src={(import.meta as any).env.BASE_URL + 'media/esqa/esqa-poster.png'} alt="EdgeSight QA" width={56} height={56} style={{ borderRadius: 8 }} />
+        <h2 className="neon logo-gradient" style={{ margin: 0 }}>EDGESIGHT QA</h2>
+      </div>
       {!sseConnected && (
         <div style={{ background: '#fff3cd', color: '#7f6519', padding: 8, border: '1px solid #ffe69c', marginBottom: 12 }}>
           Live feed disconnected. Retrying...
@@ -100,11 +147,11 @@ export default function App() {
         <Status label="Adapter" up={adapterUp} />
         <span style={{ marginLeft: 8 }}>FPS: {captureFps.toFixed(1)} | Drops: {captureDrops}</span>
       </div>
-      <div style={{ display: 'flex', gap: 16 }}>
-        <button onClick={() => startDemo()}>Start</button>
-        <span>p95: {latencyP95.toFixed(1)} ms</span>
+      <div className="panel glow" style={{ display: 'flex', gap: 16, padding: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button className="btn btn-primary" onClick={() => startDemo()}>Start</button>
+        <span>p95: {latencyP95.toFixed(1)} ms • Pre: {avgPreMs.toFixed(2)} ms • Infer: {avgInferMs.toFixed(2)} ms</span>
         <span>Results: {resultsCount} | MQTT: {mqttCount} | OPC UA: {opcuaCount}</span>
-        <label>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           Threshold: {threshold.toFixed(2)}
           <input
             type="range"
@@ -119,7 +166,7 @@ export default function App() {
             }}
           />
         </label>
-        <label>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           OPC UA
           <input
             type="checkbox"
@@ -130,7 +177,7 @@ export default function App() {
             }}
           />
         </label>
-        <label>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           Offline Mode (synthetic data)
           <input
             type="checkbox"
@@ -141,16 +188,30 @@ export default function App() {
             }}
           />
         </label>
+        <label>
+          Class filter
+          <input
+            type="text"
+            placeholder="comma separated (e.g. 0,1,defect)"
+            value={classFilter}
+            onChange={(e) => setClassFilter(e.target.value)}
+            style={{ marginLeft: 6 }}
+          />
+        </label>
       </div>
-      <h3>Recent Events</h3>
-      <div style={{ position: 'relative', width: 640, height: 360 }}>
+      <h3 className="neon">Recent Events</h3>
+      <div className="panel" style={{ position: 'relative', width: 640, height: 360, overflow: 'hidden' }}>
         <img src={frameUrl} alt="last frame" width={640} height={360} style={{ position: 'absolute', top: 0, left: 0 }} />
         <canvas ref={canvasRef} width={640} height={360} style={{ position: 'absolute', top: 0, left: 0 }} />
+        {/* HUD scanline sweep */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,255,200,0) 0%, rgba(0,255,200,0.08) 50%, rgba(0,255,200,0) 100%)', mixBlendMode: 'screen', transform: 'translateY(-100%)', animation: 'sweep 3s linear infinite' }} />
       </div>
+      <style>{`@keyframes sweep { 0% { transform: translateY(-100%) } 100% { transform: translateY(100%) } }`}</style>
       {events[0] && (
-        <DrawBoxes canvasRef={canvasRef} detections={events[0].detections} />
+        <DrawBoxes canvasRef={canvasRef} detections={filterDetections(events[0].detections, classFilter)} legend={legend} setLegend={setLegend} />
       )}
-      <ul>
+      <Legend legend={legend} />
+      <ul className="panel" style={{ padding: 12 }}>
         {events.map((ev, idx) => (
           <li key={idx}>
             {ev.ts} - {ev.frame_id} - dets: {ev.detections?.length ?? 0} {ev.corr_id ? `(corr ${ev.corr_id})` : ''}
@@ -186,12 +247,13 @@ function DrawBoxes({ canvasRef, detections }: { canvasRef: React.RefObject<HTMLC
     if (!c) return
     const ctx = c.getContext('2d')!
     ctx.clearRect(0, 0, c.width, c.height)
-    ctx.strokeStyle = 'red'
     ctx.lineWidth = 2
-    ctx.fillStyle = 'rgba(255,0,0,0.8)'
     ctx.font = '12px sans-serif'
     detections?.forEach((d: any) => {
       const [x, y, w, h] = d.bbox || [0, 0, 0, 0]
+      const color = pickColor(String(d.class_id))
+      ctx.strokeStyle = color
+      ctx.fillStyle = color
       ctx.strokeRect(x, y, w, h)
       const label = `${d.class_id ?? 'cls'}:${(d.score ?? 0).toFixed(2)}`
       ctx.fillText(label, x + 2, Math.max(10, y - 4))
@@ -200,13 +262,40 @@ function DrawBoxes({ canvasRef, detections }: { canvasRef: React.RefObject<HTMLC
   return null
 }
 
-function Status({ label, up }: { label: string, up: boolean }) {
-  const color = up ? '#2e7d32' : '#c62828'
-  const bg = up ? '#e8f5e9' : '#ffebee'
-  const border = up ? '#c8e6c9' : '#ffcdd2'
+function Legend({ legend }: { legend: Record<string, string> }) {
+  const entries = Object.entries(legend)
+  if (!entries.length) return null
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 6px', background: bg, color, border: `1px solid ${border}`, borderRadius: 4 }}>
-      <span style={{ width: 8, height: 8, borderRadius: 999, background: color }} />
+    <div className="panel" style={{ marginTop: 12, padding: 8, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+      {entries.map(([k, v]) => (
+        <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 10, height: 10, borderRadius: 999, background: v, boxShadow: `0 0 8px ${v}` }} />
+          <span>{k}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function pickColor(key: string): string {
+  const palette = ['#00ffc8', '#1e90ff', '#ff00a8', '#ffcc00', '#7fff00', '#ff6f61', '#00e5ff']
+  let hash = 0
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) & 0xffffffff
+  const idx = Math.abs(hash) % palette.length
+  return palette[idx]
+}
+
+function filterDetections(dets: any[], filter: string): any[] {
+  if (!filter) return dets
+  const tokens = filter.split(',').map(s => s.trim()).filter(Boolean)
+  if (!tokens.length) return dets
+  return dets.filter(d => tokens.includes(String(d.class_id)) || (d.label && tokens.includes(String(d.label))))
+}
+
+function Status({ label, up }: { label: string, up: boolean }) {
+  return (
+    <span className={`chip ${up ? 'up' : 'down'}`}>
+      <span className={`dot ${up ? 'up' : 'down'}`} />
       {label}
     </span>
   )
