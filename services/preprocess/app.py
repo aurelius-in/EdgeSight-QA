@@ -11,6 +11,13 @@ from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from prometheus_client import Counter, Gauge, Histogram, CONTENT_TYPE_LATEST, generate_latest
+from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 
 from ops import run_pipeline
 
@@ -23,6 +30,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# OpenTelemetry minimal bootstrap
+def _init_tracing():
+    if os.getenv("OTEL_ENABLED", "1").lower() in ("1", "true", "yes"):
+        endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317")
+        insecure = os.getenv("OTEL_EXPORTER_OTLP_INSECURE", "1").lower() in ("1", "true", "yes")
+        resource = Resource.create({"service.name": os.getenv("OTEL_SERVICE_NAME", "preprocess")})
+        provider = TracerProvider(resource=resource)
+        exporter = OTLPSpanExporter(endpoint=endpoint, insecure=insecure)
+        provider.add_span_processor(BatchSpanProcessor(exporter))
+        trace.set_tracer_provider(provider)
+        FastAPIInstrumentor().instrument_app(app)
+        HTTPXClientInstrumentor().instrument()
+
+_init_tracing()
 
 preprocess_counter = Counter("preprocess_frames_total", "Frames received for preprocessing")
 preprocess_time_ms = Histogram("preprocess_time_ms", "Preprocess step time (ms)", buckets=(1,5,10,20,50,100,200))
