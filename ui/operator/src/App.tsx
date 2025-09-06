@@ -25,7 +25,7 @@ export default function App() {
 
   useEffect(() => {
     const id = setInterval(() => {
-      setFrameUrl(`/last_frame?nocache=${Date.now()}`)
+      setFrameUrl(`${apiBase}/last_frame?nocache=${Date.now()}`)
     }, 1000)
     return () => clearInterval(id)
   }, [])
