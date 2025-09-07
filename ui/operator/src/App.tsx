@@ -247,7 +247,17 @@ export default function App() {
       </div>
       <h3 className="neon">Recent Events</h3>
       <div className="panel" style={{ position: 'relative', width: 640, height: 360, overflow: 'hidden' }}>
-        <img src={frameUrl} alt="last frame" width={640} height={360} style={{ position: 'absolute', top: 0, left: 0 }} />
+        <img
+          src={frameUrl}
+          alt="last frame"
+          width={640}
+          height={360}
+          style={{ position: 'absolute', top: 0, left: 0 }}
+          onError={(e) => {
+            const base = (import.meta as any).env.BASE_URL || '/'
+            ;(e.currentTarget as HTMLImageElement).src = base + 'media/esqa/esqa-poster.png'
+          }}
+        />
         <canvas ref={canvasRef} width={640} height={360} style={{ position: 'absolute', top: 0, left: 0 }} />
         {/* HUD scanline sweep */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,255,200,0) 0%, rgba(0,255,200,0.08) 50%, rgba(0,255,200,0) 100%)', mixBlendMode: 'screen', transform: 'translateY(-100%)', animation: 'sweep 3s linear infinite' }} />
