@@ -4,6 +4,30 @@ A modular, containerized edge computer vision system for industrial quality assu
 
 > Goal: repeatable inspection that scales from one line to many, with traceability, safe rollouts, and operator‑friendly outputs.
 
+## Live operator view (16s)
+
+<div align="center">
+  <video src="assets/demo/edgesight-qa-operator-16s.mp4" controls playsinline style="max-width: 100%; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.35);"></video>
+  <br/>
+  <small><a href="assets/demo/edgesight-qa-operator-16s.mp4">Download clip</a></small>
+</div>
+
+What you’re seeing:
+
+- Bounding boxes actively sweep, dart, and then settle as the detector interrogates candidate regions on the part. The main red box converges near the area of interest while smaller probes appear briefly, scan across the frame, and disappear as hypotheses are ruled out.
+- The top controls show live telemetry relevant to operators:
+  - p95 latency (ms): a rolling end‑to‑end measure of capture → preprocess → inference → publish; stays within the target envelope during the sequence.
+  - Pre / Infer (ms): average preprocessing and model inference times, indicating where compute is spent.
+  - FPS and Drops: actual capture rate and any dropped frames; stable during steady state.
+  - Results / MQTT / OPC UA: cumulative publishes to plant systems; the “msg/s” dial on the telemetry card reflects the current outbound publish rate.
+  - Threshold: the decision threshold you can adjust to tune sensitivity vs precision in real time.
+
+The telemetry card to the right visualizes recent performance and signal mix:
+
+- Latency trace: a compact sparkline of recent p95 values for quick trend recognition.
+- Class mix bars: distribution of detection classes observed in the last window.
+- Messages per second: current publish rate to plant systems.
+
 ---
 
 ## Contents

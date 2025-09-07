@@ -13,7 +13,8 @@ function Splash({ onDone }: { onDone: () => void }) {
   const srcMp4 = `${base}media/esqa/esqa.mp4`
   const poster = `${base}media/esqa/esqa-poster.png`
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'black', display: 'grid', placeItems: 'center' }}>
+    <div style={{ position: 'fixed', inset: 0 }}>
+      <div style={{ position: 'absolute', inset: 0, background: `#0A0F14 url('${base}media/bg/wave-bg.webp') center/cover no-repeat fixed` }} />
       <video
         key="esqa-splash"
         poster={poster}
@@ -21,7 +22,7 @@ function Splash({ onDone }: { onDone: () => void }) {
         muted
         playsInline
         preload="metadata"
-        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
       >
         <source src={srcWeb} type="video/mp4" />
         <source src={srcMp4} type="video/mp4" />
