@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import { apiBase, startDemo, setThreshold as updateThreshold, setOpcuaEnabled, setDemoForce } from './api'
 import { mockStream } from './mock'
 import { NeonCharts } from './visuals'
+import OfflineStage from './components/OfflineStage'
+import './styles/theme.css'
 const inferBase = (import.meta as any).env.VITE_INFERENCE_API_BASE || 'http://localhost:9003'
 
 type EventMsg = { ts: string; frame_id: string; detections: any[]; corr_id?: string; trace_id?: string }
@@ -159,7 +161,7 @@ export default function App() {
 
   return (
     <>
-    <div style={{ fontFamily: 'sans-serif', padding: 16 }}>
+    <div className="bg-wave" style={{ fontFamily: 'sans-serif' }}>
       {showHero && (
         <div className="panel glow holo-grid" style={{ padding: 24, marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
@@ -245,22 +247,16 @@ export default function App() {
           />
         </label>
       </div>
-      <h3 className="neon">Recent Events</h3>
-      <div className="panel" style={{ position: 'relative', width: 640, height: 360, overflow: 'hidden' }}>
-        <img
-          src={frameUrl}
-          alt="last frame"
-          width={640}
-          height={360}
-          style={{ position: 'absolute', top: 0, left: 0 }}
-          onError={(e) => {
-            const base = (import.meta as any).env.BASE_URL || '/'
-            ;(e.currentTarget as HTMLImageElement).src = base + 'media/esqa/esqa-poster.png'
-          }}
-        />
-        <canvas ref={canvasRef} width={640} height={360} style={{ position: 'absolute', top: 0, left: 0 }} />
-        {/* HUD scanline sweep */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,255,200,0) 0%, rgba(0,255,200,0.08) 50%, rgba(0,255,200,0) 100%)', mixBlendMode: 'screen', transform: 'translateY(-100%)', animation: 'sweep 3s linear infinite' }} />
+      <OfflineStage />
+      <h3 className="neon" style={{ padding: '0 28px' }}>Recent Events</h3>
+      <div className="panel" style={{ margin: '0 28px', overflow: 'hidden' }}>
+        <ul style={{ listStyle: 'none', padding: 12, margin: 0 }}>
+          {events.map((ev, idx) => (
+            <li key={idx}>
+              {ev.ts} - {ev.frame_id} - dets: {ev.detections?.length ?? 0} {ev.corr_id ? `(corr ${ev.corr_id})` : ''}
+            </li>
+          ))}
+        </ul>
       </div>
       <style>{`@keyframes sweep { 0% { transform: translateY(-100%) } 100% { transform: translateY(100%) } }`}</style>
       {events[0] && (
