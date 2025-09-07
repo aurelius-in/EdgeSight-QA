@@ -7,9 +7,9 @@ A modular, containerized edge computer vision system for industrial quality assu
 ## Live operator view (16s)
 
 <div align="center">
-  <video src="assets/demo/edgesight-qa-operator-16s.mp4" controls playsinline style="max-width: 100%; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.35);"></video>
+  <img src="esqa-preview.gif" alt="EdgeSight QA operator view" style="max-width: 100%; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.35);" />
   <br/>
-  <small><a href="assets/demo/edgesight-qa-operator-16s.mp4">Download clip</a></small>
+  <img src="esqa-banner.png" alt="EdgeSight QA" width="640" />
 </div>
 
 What you’re seeing:
