@@ -14,26 +14,39 @@ export function NeonCharts({
   mqttPerSec: number
 }) {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
+  const containerRef = React.useRef<HTMLDivElement | null>(null)
+  const [drawW, setDrawW] = React.useState<number>(width)
+
+  React.useEffect(() => {
+    const r = new ResizeObserver((entries) => {
+      const w = Math.floor(entries[0].contentRect.width)
+      setDrawW(Math.max(0, w))
+    })
+    if (containerRef.current) r.observe(containerRef.current)
+    return () => r.disconnect()
+  }, [])
 
   React.useEffect(() => {
     const c = canvasRef.current
     if (!c) return
-    c.width = width
-    c.height = height
+    const W = Math.max(0, drawW || width)
+    const H = height
+    c.width = W
+    c.height = H
     const ctx = c.getContext('2d')!
-    ctx.clearRect(0, 0, width, height)
+    ctx.clearRect(0, 0, W, H)
 
     // Background glow
-    const bgGrad = ctx.createLinearGradient(0, 0, width, height)
+    const bgGrad = ctx.createLinearGradient(0, 0, W, H)
     bgGrad.addColorStop(0, 'rgba(255,0,168,0.08)')
     bgGrad.addColorStop(1, 'rgba(0,216,255,0.08)')
     ctx.fillStyle = bgGrad
-    ctx.fillRect(0, 0, width, height)
+    ctx.fillRect(0, 0, W, H)
 
     // Latency line (top half)
     const pad = 12
-    const chartW = width - pad * 2
-    const chartH = height * 0.5 - pad * 2
+    const chartW = W - pad * 2
+    const chartH = H * 0.5 - pad * 2
     const series = latencySeries.slice(-120)
     const maxY = Math.max(100, ...series)
     ctx.strokeStyle = '#00ffc8'
@@ -58,21 +71,21 @@ export function NeonCharts({
     const barW = (chartW / Math.max(3, keys.length)) * 0.7
     keys.forEach((k, idx) => {
       const v = classCounts[k] || 0
-      const h = (v / total) * (height * 0.35)
+      const h = (v / total) * (H * 0.35)
       const x = pad + idx * (chartW / Math.max(3, keys.length))
-      const y = height - pad - h
+      const y = H - pad - h
       ctx.fillStyle = pickColor(k)
       ctx.shadowColor = pickColor(k)
       ctx.shadowBlur = 8
       ctx.fillRect(x, y, barW, h)
       ctx.shadowBlur = 0
       ctx.fillStyle = 'rgba(255,255,255,0.75)'
-      ctx.fillText(k, x, height - pad + 12)
+      ctx.fillText(k, x, H - pad + 12)
     })
 
     // MQTT per sec gauge (bottom-right)
-    const gaugeCX = width - 80
-    const gaugeCY = height - 60
+    const gaugeCX = Math.floor(W / 2)
+    const gaugeCY = H - 60
     const r = 40
     const pct = Math.max(0, Math.min(1, mqttPerSec / 20))
     ctx.strokeStyle = 'rgba(255,255,255,0.15)'
@@ -92,9 +105,13 @@ export function NeonCharts({
     ctx.textAlign = 'center'
     ctx.fillText(`${mqttPerSec.toFixed(1)} msg/s`, gaugeCX, gaugeCY + 6)
     ctx.textAlign = 'left'
-  }, [width, height, latencySeries, classCounts, mqttPerSec])
+  }, [drawW, width, height, latencySeries, classCounts, mqttPerSec])
 
-  return <canvas ref={canvasRef} style={{ width, height }} />
+  return (
+    <div ref={containerRef} style={{ width: '100%' }}>
+      <canvas ref={canvasRef} style={{ width: '100%', height }} />
+    </div>
+  )
 }
 
 function percentile(values: number[], p: number): number {

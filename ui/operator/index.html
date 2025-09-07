@@ -26,7 +26,7 @@
           var(--bg);
         color: var(--fg);
       }
-      .bg-wave { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: url('/media/bg/wave-bg.webp'); background-position: center center; background-repeat: no-repeat; background-size: cover; opacity: 0.35; }
+      .bg-wave { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: url('/media/bg/wave-bg.webp'); background-position: center center; background-repeat: no-repeat; background-size: cover; opacity: 1; }
       @media (max-width: 640px) { .bg-wave { background-size: auto 100vh; } }
       .neon {
         text-shadow:
@@ -91,7 +91,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <div class="bg-wave"></div>
     <div class="scanline"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
