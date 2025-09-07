@@ -1,4 +1,7 @@
-# EdgeSight QA
+<p align="center">
+  <img src="esqa-banner.png" alt="EdgeSight QA" />
+  
+</p>
 
 A modular, containerized edge computer vision system for industrial quality assurance. Ingests multi‑camera feeds, runs on‑device inference, writes results to plant systems (Ignition, MQTT, OPC UA), and streams events and metrics to storage for monitoring, retraining, and audit.
 
@@ -8,8 +11,6 @@ A modular, containerized edge computer vision system for industrial quality assu
 
 <div align="center">
   <img src="esqa-preview.gif" alt="EdgeSight QA operator view" style="max-width: 100%; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.35);" />
-  <br/>
-  <img src="esqa-banner.png" alt="EdgeSight QA" width="640" />
 </div>
 
 What you’re seeing:
