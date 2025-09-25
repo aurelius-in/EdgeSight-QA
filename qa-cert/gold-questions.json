@@ -1,0 +1,5 @@
+[
+  {"id": 1, "question": "Is line clearance completed?", "sop": "LC-101", "weight": 2},
+  {"id": 2, "question": "Are gauges within tolerance?", "sop": "GA-202", "weight": 3},
+  {"id": 3, "question": "Are camera feeds stable?", "sop": "CF-303", "weight": 2}
+]
