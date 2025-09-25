@@ -1,0 +1,9 @@
+# Image mirror list for air-gapped delivery
+# Lines starting with # are comments. One image (tag or digest) per line.
+# Replace REPLACE_* with your pinned digests.
+# App image (pin digest in prod/staging overlays)
+ghcr.io/aurelius-in/edgesight-qa:dev
+# Optional: infra images you rely on (fill in as needed)
+# ghcr.io/kserve/modelmesh-runtime-adapter:REPLACE
+# ghcr.io/kserve/modelmesh:REPLACE
+# docker.io/library/nginx:1.27.0
