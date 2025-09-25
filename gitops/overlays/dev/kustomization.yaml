@@ -4,4 +4,4 @@ resources:
   - ../../serve
 images:
   - name: ghcr.io/aurelius-in/edgesight-qa
-    newTag: latest
+    newTag: dev
