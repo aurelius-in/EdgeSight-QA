@@ -1,0 +1,3 @@
+resources:
+  - kserve/inferenceservice.yaml
+  - rollouts/rollout.yaml

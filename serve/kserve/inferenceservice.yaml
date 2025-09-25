@@ -1,0 +1,38 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: edgesight-qa-model
+  namespace: vision
+  annotations:
+    serving.kserve.io/deploymentMode: ModelMesh
+spec:
+  predictor:
+    serviceAccountName: default
+    tolerations: []
+    nodeSelector: {}
+    minReplicas: 1
+    maxReplicas: 2
+    containers:
+      - name: model
+        image: ghcr.io/aurelius-in/edgesight-qa:latest
+        # OPA policy will deny latest; overlay will pin digest
+        args: ["--model", "/mnt/models/model.onnx"]
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+            nvidia.com/gpu: "1"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+            nvidia.com/gpu: "1"
+        env:
+          - name: STORAGE_URI
+            value: s3://edgesight/models/qa-model/
+        volumeMounts:
+          - name: model-store
+            mountPath: /mnt/models
+    volumes:
+      - name: model-store
+        persistentVolumeClaim:
+          claimName: qa-model-pvc

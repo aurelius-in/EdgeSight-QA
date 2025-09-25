@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: edgesight-qa-rollout
+  namespace: vision
+spec:
+  replicas: 2
+  strategy:
+    canary:
+      steps:
+        - setWeight: 20
+        - pause: {duration: 60}
+        - setWeight: 50
+        - pause: {duration: 120}
+        - setWeight: 100
+  selector:
+    matchLabels:
+      app: edgesight-qa
+  template:
+    metadata:
+      labels:
+        app: edgesight-qa
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/aurelius-in/edgesight-qa@sha256:REPLACE_ME
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /v1/healthz, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /v1/healthz, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
