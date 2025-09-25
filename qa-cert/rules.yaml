@@ -1,0 +1,3 @@
+rules:
+  green_min_score: 0.9
+  yellow_min_score: 0.7
