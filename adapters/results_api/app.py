@@ -2,18 +2,31 @@ from fastapi import FastAPI
 from .schemas import DetectionEvent
 from pathlib import Path
 import json
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from time import time
 
-app = FastAPI(title="EdgeSight QA Results API", version="0.1.1")
+REQUEST_LATENCY = Histogram('results_api_request_latency_seconds', 'Latency', ['endpoint'])
+EVENT_COUNTER = Counter('results_api_events_total', 'Events received')
+
+app = FastAPI(title="EdgeSight QA Results API", version="0.1.2")
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.get("/v1/healthz")
+@REQUEST_LATENCY.labels('/v1/healthz').time()
 def healthz():
     return {"status": "ok"}
 
 @app.post("/v1/event")
+@REQUEST_LATENCY.labels('/v1/event').time()
 def post_event(event: DetectionEvent):
+    EVENT_COUNTER.inc()
     return {"accepted": True, "camera_id": event.camera_id, "ts": event.ts.isoformat()}
 
 @app.post("/v1/certify")
+@REQUEST_LATENCY.labels('/v1/certify').time()
 def certify(event: DetectionEvent):
     lane = "green" if event.score >= 0.9 else ("yellow" if event.score >= 0.7 else "red")
     citations = []
