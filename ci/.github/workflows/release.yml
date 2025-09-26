@@ -1,0 +1,23 @@
+name: release
+on:
+  workflow_dispatch:
+  push:
+    tags: [ "v*.*.*" ]
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble audit bundle
+        run: |
+          mkdir -p _bundle
+          cp -r security/sbom _bundle/sbom || true
+          cp -r gitops _bundle/gitops
+          cp -r serve _bundle/serve
+          cp -r policy _bundle/policy
+          git rev-parse HEAD > _bundle/commit.txt
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-bundle
+          path: _bundle

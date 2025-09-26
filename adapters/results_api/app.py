@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, Response
 from .schemas import DetectionEvent
 from pathlib import Path
 import json
