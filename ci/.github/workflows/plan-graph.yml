@@ -1,0 +1,28 @@
+name: plan-graph
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "deploy/terraform/**"
+jobs:
+  graph:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+      - name: Install graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+      - name: Terraform init
+        working-directory: deploy/terraform
+        run: terraform init -input=false
+      - name: Terraform graph
+        working-directory: deploy/terraform
+        run: terraform graph | dot -Tsvg > tf-graph.svg
+      - name: Upload graph
+        uses: actions/upload-artifact@v4
+        with:
+          name: tf-graph
+          path: deploy/terraform/tf-graph.svg
