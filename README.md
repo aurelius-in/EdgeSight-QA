@@ -2,6 +2,13 @@
   <img src="esqa-banner.png" alt="EdgeSight QA" />
   
 </p>
+<p align=\"center\">
+  <a href=\"https://github.com/anchore/syft\"><img src=\"https://img.shields.io/badge/SBOM-syft-blue\" alt=\"SBOM\"></a>
+  <a href=\"https://github.com/sigstore/cosign\"><img src=\"https://img.shields.io/badge/Signed-cosign-success\" alt=\"cosign\"></a>
+  <a href=\"https://www.openpolicyagent.org/\"><img src=\"https://img.shields.io/badge/Policy-OPA-green\" alt=\"OPA\"></a>
+  <a href=\"https://argo-rollouts.readthedocs.io/\"><img src=\"https://img.shields.io/badge/Rollouts-Argo-blueviolet\" alt=\"Argo Rollouts\"></a>
+  <a href=\"redteam/reports\"><img src=\"https://img.shields.io/badge/Red--Team-harness-orange\" alt=\"Red-Team\"></a>
+</p>
 
 A modular, containerized edge computer vision system for industrial quality assurance. Ingests multi‑camera feeds, runs on‑device inference, writes results to plant systems (Ignition, MQTT, OPC UA), and streams events and metrics to storage for monitoring, retraining, and audit.
 
@@ -65,6 +72,14 @@ Factories need inspection that is reliable, traceable, and easy to roll out. Edg
 * Every decision is traceable to model version, data snapshot, and configuration
 * Updates are health‑gated and automatically rolled back on error budget breach
 
+
+## How it works (90s)
+
+- Capture: time-synced frames with IDs and drop counters
+- Preprocess: deterministic pipeline (resize/normalize/mask)
+- Inference: ONNX/TensorRT; versioned weights; warm start
+- Results: publish detections to MQTT/OPC UA; emit Prom metrics
+- GitOps: KServe serve + Argo canaries; OPA policies gate unsafe changes
 ## Architecture
 
 ```
