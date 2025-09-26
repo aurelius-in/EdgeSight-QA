@@ -2,13 +2,6 @@
   <img src="esqa-banner.png" alt="EdgeSight QA" />
   
 </p>
-<p align=\"center\">
-  <a href=\"https://github.com/anchore/syft\"><img src=\"https://img.shields.io/badge/SBOM-syft-blue\" alt=\"SBOM\">
-  <a href=\"https://github.com/sigstore/cosign\"><img src=\"https://img.shields.io/badge/Signed-cosign-success\" alt=\"cosign\">
-  <a href=\"https://www.openpolicyagent.org/\"><img src=\"https://img.shields.io/badge/Policy-OPA-green\" alt=\"OPA\">
-  <a href=\"https://argo-rollouts.readthedocs.io/\"><img src=\"https://img.shields.io/badge/Rollouts-Argo-blueviolet\" alt=\"Argo Rollouts\">
-  <a href=\"redteam/reports\"><img src=\"https://img.shields.io/badge/Red--Team-harness-orange\" alt=\"Red-Team\">
-</p>
 
 A modular, containerized edge computer vision system for industrial quality assurance. Ingests multi‑camera feeds, runs on‑device inference, writes results to plant systems (Ignition, MQTT, OPC UA), and streams events and metrics to storage for monitoring, retraining, and audit.
 
