@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: edgesight-qa-rollout-no-limits
+  namespace: vision
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edgesight-qa
+  template:
+    metadata:
+      labels:
+        app: edgesight-qa
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/aurelius-in/edgesight-qa@sha256:REPLACE_ME
+          ports:
+            - containerPort: 8080
+          # Intentionally no resources to trigger policy
