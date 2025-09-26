@@ -1,0 +1,4 @@
+# Images to be flagged by supply-chain checks (examples)
+docker.io/library/nginx:latest
+ghcr.io/aurelius-in/edgesight-qa:latest
+insecure.registry.local/app:0.1.0

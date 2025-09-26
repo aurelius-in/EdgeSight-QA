@@ -1,0 +1,9 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bad-netpol-no-selector
+  namespace: vision
+spec:
+  # Intentionally omit podSelector to trigger policy
+  ingress:
+    - {}

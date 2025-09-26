@@ -26,6 +26,13 @@ spec:
           image: ghcr.io/aurelius-in/edgesight-qa@sha256:REPLACE_ME
           ports:
             - containerPort: 8080
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           readinessProbe:
             httpGet: { path: /v1/healthz, port: 8080 }
             initialDelaySeconds: 5
