@@ -499,31 +499,10 @@ MIT. See `LICENSE` file.
 
 ---
 
-### Appendix: JIRA scaffold (copy as EPIC and stories)
-
-```
-EPIC: EdgeSight QA - Line 1 Pilot
-- Story: Capture service with time sync and frame IDs
-- Story: Preprocess pipeline with YAML config
-- Story: Inference service with model registry and warm start
-- Story: Results adapter with MQTT or OPC UA integration
-- Story: Operator UI with overlays and threshold control
-- Story: Metrics and logs across services, Grafana dashboards
-- Story: Ignition alarm hookup and tag mapping
-- Story: Rollout pipeline with canary and health gates
-- Story: Provenance capture and markdown report generation
-- Story: Performance and failover tests with golden frames
-```
-
----
-
-# Tailoring Guide: Denali & Fronterra (Food/Pharma) Readiness
-
-This section distills **how EdgeSight QA maps to the needs of Denali’s AI Software BU** (Ignition-centric, AWS-friendly, regulated delivery with OpenShift/Kubernetes) **and to Fronterra** (food & beverage / process manufacturing with HACCP/SQF-style controls). Use it verbatim in RFPs, screenshares, or as a talking track.
 
 ## Who This Is For
 
-* **Systems Integrators (e.g., Denali)** needing an **edge CV stack** that slots into **Ignition**, supports **air‑gapped or near‑air‑gapped** deployments, and scales from **1 line → 25+ lines** with repeatable practices.
+* **Systems Integrators** needing an **edge CV stack** that slots into **Ignition**, supports **air‑gapped or near‑air‑gapped** deployments, and scales from **1 line → 25+ lines** with repeatable practices.
 * **Regulated manufacturers (e.g., pharma, food/bev like Fronterra)** that require **traceability, reproducibility, and data hygiene** with clear acceptance criteria (e.g., **99.99% accuracy target for advisory outputs** where required).
 
 ## Why It Fits (1‑page summary)
@@ -542,7 +521,7 @@ This section distills **how EdgeSight QA maps to the needs of Denali’s AI Soft
 
 ---
 
-## RM‑ODP Viewpack (regulated audiences)
+## Viewpack (regulated audiences)
 
 **Enterprise view**: Business goal → Reduce defects/downtime; compliance → traceable decisions; stakeholders → quality, operations, validation.
 
@@ -553,8 +532,6 @@ This section distills **how EdgeSight QA maps to the needs of Denali’s AI Soft
 **Engineering view**: Deploy → Kubernetes/OpenShift; packaging → OCI images; observability → Prometheus exporters + Grafana; storage → local TSDB + cloud sinks when available.
 
 **Technology view**: Jetson Orin NX **or** x86+GPU IPC; PoE cameras + controlled lighting; NTP; secure boot (where supported); registry mirror for air‑gap.
-
-Add these to `docs/rmodp.md` with one figure per view.
 
 ---
 
