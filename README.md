@@ -542,7 +542,7 @@ This section distills **how EdgeSight QA maps to the needs of Denali’s AI Soft
 
 ---
 
-## RM‑ODP Viewpack (AbbVie/regulated audiences)
+## RM‑ODP Viewpack (regulated audiences)
 
 **Enterprise view**: Business goal → Reduce defects/downtime; compliance → traceable decisions; stakeholders → quality, operations, validation.
 
@@ -646,53 +646,3 @@ Add `docs/bom.md` with part classes and lead‑time notes.
 
 ---
 
-## Jira/Epics Breakdown (copy/paste)
-
-**Epic: Edge capture to decision**
-
-* Story: Implement camera capture service (multi‑camera, time‑sync, buffering)
-* Story: Preprocessing pipeline with configurable steps
-* Story: Inference service with ONNX Runtime/TensorRT; model registry integration
-* Story: Results adapter with Ignition (MQTT/OPC UA) output + REST webhook
-* Story: Health probes, metrics (Prometheus), structured logs
-
-**Epic: Governance & provenance**
-
-* Story: Run manifest + signed decision log
-* Story: Governance exporter → PDF/Markdown
-* Story: Retention & RBAC policy implementation
-
-**Epic: Platform & rollout**
-
-* Story: Helm charts + OpenShift routes; HPA
-* Story: Canary rollout + auto‑rollback; CI/CD wiring
-* Story: Air‑gap artifact bundling + registry mirror
-
----
-
-## 8‑Minute Demo Runbook
-
-1. **Pick a preset** (pharma or food/bev) → show overlays & adjustable threshold.
-2. **Trigger stress** (toggle network/camera) → show degraded‑but‑safe behavior.
-3. **Open Ignition** → event/alarm arrives; tag path shown.
-4. **Open Grafana** → latency/FPS/false‑alarm trend.
-5. **Open governance report** → signed decisions, model/data hashes.
-
----
-
-## Two 30‑second spoken pitches
-
-**For Denali**
-“EdgeSight QA is a modular, containerized inspection stack that drops into Ignition and runs on Kubernetes or OpenShift on‑prem. It’s built for air‑gapped environments with registry mirroring, health‑gated rollouts, and a provenance ledger so every decision is auditable. We’ve packaged Terraform/Helm skeletons so your team can scale from one line to dozens without reinventing the deploy each time.”
-
-**For Fronterra**
-“EdgeSight QA targets food and beverage lines where downtime and quality drive margin. It flags under/over‑fill, cap mis‑seats, and label issues in real time on the device, then writes events to your plant systems even if the cloud link is down. A governance report ties each decision back to the model and data used, which supports HACCP/SQF style audits while keeping operators focused on simple overlays and alarms.”
-
----
-
-## Links to Related Tools
-
-* **PerceptionLab** – experiment and tune pipelines before production (thresholds, overlays, latency visuals).
-* **This repo** – production‑style modules and deployment path.
-
-> After the demo, share PerceptionLab to show you have **more than one** CV tool, then bring them back to EdgeSight QA for the production story.
